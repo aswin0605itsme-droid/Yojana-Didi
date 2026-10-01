@@ -516,10 +516,11 @@ export default function Home() {
             isListening={voice.isListening}
             interimText={voice.interimText}
             lastSpokenQuery={lastSpokenQuery}
-            onSpeakText={(text) => {
+            onSpeakText={(text, targetLang) => {
               stopReadingOutLoud();
               voice.unlockAudioContext();
-              voice.speak(text, undefined, speechLangCode);
+              const sCode = targetLang ? (SUPPORTED_LANGUAGES[targetLang]?.speechLang || speechLangCode) : speechLangCode;
+              voice.speak(text, undefined, sCode);
             }}
             onStartListening={() => {
               stopReadingOutLoud();

@@ -30,8 +30,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (always keep secrets local and out of git)
 .env*
+!.env.example
+
+# scratch scripts, tests, and logs
+scratch*
+snap.js
+test_*.cjs
+*.log
 
 # vercel
 .vercel

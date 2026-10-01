@@ -1,91 +1,103 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { YOJANA_DIDI_SYSTEM_PROMPT, DIDI_RESPONSE_SCHEMA } from "@/app/lib/didiPrompt";
-import { simulateYojanaDidiResponse } from "@/app/lib/schemes";
+import { VANI_SYSTEM_PROMPT, DIDI_RESPONSE_SCHEMA } from "@/app/lib/didiPrompt";
+import { parseOmniIntent } from "@/app/lib/omniHandler";
 import { detectLanguageFromText } from "@/app/lib/languages";
-import { YojanaDidiResponse } from "@/app/types";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { message, history = [], turnCount = 1, language = "hi" } = body;
+    const { message = "", history = [], language = "ta", userCondition } = body;
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
     // Detect language from user input or use selected language
-    const detectedLang = detectLanguageFromText(message) || language || "hi";
+    const detectedLang = detectLanguageFromText(message) || language || "ta";
 
-    // Fast Omnipresent Intent Check (0ms latency for Locations, Websites, Portals)
-    const { parseOmniIntent } = await import("@/app/lib/omniHandler");
-    const omni = parseOmniIntent(message, detectedLang === "ta" ? "ta" : "en");
-    if (omni.type === "location" || omni.type === "website") {
+    // If no API key configured, use fast local omni handler
+    if (!apiKey) {
+      console.log(`[VANI] No API key; running in local omni handler mode (${detectedLang})`);
+      const omni = parseOmniIntent(message, detectedLang);
       return NextResponse.json({
         spoken_response: omni.spokenText,
-        ui_mode: omni.type,
         language: detectedLang,
-        map_query: omni.mapQuery || null,
+        type: omni.type,
+        ui_mode: omni.type,
+        title: omni.title,
         website_url: omni.websiteUrl || null,
         website_label: omni.websiteLabel || null,
-        action_card_details: {
-          scheme_name: omni.title,
-          documents_needed: ["Aadhaar Card", "Bank Passbook"],
-          where_to_go: omni.mapQuery || "",
-          what_to_say: "I am visiting for government scheme assistance."
-        }
+        map_query: omni.mapQuery || null,
+        phone_hotline: omni.phoneHotline || null,
+        highlights: omni.documents || null
       });
     }
 
-    // If no API key configured or offline testing, use our multilingual conversational simulator
-    if (!apiKey) {
-      console.log(`[Yojana Didi] Running in Multilingual Simulator Mode (${detectedLang}, Turn ${turnCount})`);
-      const fallbackResponse = simulateYojanaDidiResponse(message, turnCount, detectedLang);
-      return NextResponse.json(fallbackResponse);
-    }
-
-    // Call live Gemini 3.8 Flash model
+    // Call live Gemini 3.5 Flash Lite (with fallback to gemini-3.8-flash)
     try {
       const ai = new GoogleGenAI({ apiKey });
 
-      // Build context
+      // Build context history
       const formattedHistory = history.map((turn: { role: string; content: string }) => ({
         role: turn.role === "assistant" ? "model" : "user",
         parts: [{ text: turn.content }]
       }));
 
-      // Add user's latest message with turn count & multilingual guidance
-      const promptWithTurn = `
-[System Context: This is Turn #${turnCount} of the interaction. 
-Selected or detected user language: ${detectedLang}.
-CRITICAL LANGUAGE DIRECTIVE: Detect the user's language and respond naturally in the SAME language and script (e.g., Hindi, English, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, etc.). Return the detected 2-letter language code in the "language" field.
-${turnCount >= 3 ? "CRITICAL ACTION DIRECTIVE: You have reached 3-4 questions. You MUST now stop asking questions and set ui_mode to 'action_card' with complete action_card_details." : "Ask exactly ONE simple question with no jargon."}]
+      const contextAddon = userCondition
+        ? `\n[User Background Context: Work=${userCondition.work || "general"}, Setup=${userCondition.setup || "individual"}, Capital=${userCondition.capital || "under_50k"}]`
+        : "";
 
-User message: ${message || "Namaste"}
+      const userPrompt = `
+[System Directives:
+- Selected/Detected User Language: ${detectedLang}.
+- CRITICAL REQUIREMENT: You MUST answer DIRECTLY to the user in the SAME language and script as their query or selected language (${detectedLang}).
+- If Tamil or Tanglish, reply in fluent, respectful, natural Tamil script.
+- Answer ANY question: schemes, government benefits, hospitals, 108 ambulance, train booking, 139 helpline, bus stands/timings, locations, or general doubts.
+- Include accurate official website URLs (e.g. mudra.org.in, pmvishwakarma.gov.in, pmsvanidhi.mohua.gov.in, irctc.co.in, tnstc.in, pmjay.gov.in, myscheme.gov.in) if relevant.
+- Include map_query if location/bank/hospital/station is relevant.
+- Include phone_hotline if emergency/helpline is relevant.]
+${contextAddon}
+
+User Message: ${message || "வணக்கம்"}
 `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          ...formattedHistory,
-          {
-            role: "user",
-            parts: [{ text: promptWithTurn }]
-          }
-        ],
-        config: {
-          systemInstruction: YOJANA_DIDI_SYSTEM_PROMPT,
-          responseMimeType: "application/json",
-          responseSchema: DIDI_RESPONSE_SCHEMA,
-          temperature: 0.6
+      let responseText = "";
+      const modelsToTry = ["gemini-3.5-flash-lite", "gemini-3.8-flash"];
+      let lastErr: any = null;
+
+      for (const modelName of modelsToTry) {
+        try {
+          const res = await ai.models.generateContent({
+            model: modelName,
+            contents: [
+              ...formattedHistory,
+              {
+                role: "user",
+                parts: [{ text: userPrompt }]
+              }
+            ],
+            config: {
+              systemInstruction: VANI_SYSTEM_PROMPT,
+              responseMimeType: "application/json",
+              responseSchema: DIDI_RESPONSE_SCHEMA,
+              temperature: 0.4
+            }
+          });
+          responseText = res.text?.trim() || "";
+          if (responseText) break;
+        } catch (err: any) {
+          lastErr = err;
+          console.warn(`[VANI] Model ${modelName} call failed, trying next:`, err?.message || err);
         }
-      });
+      }
 
-      const responseText = response.text?.trim() || "";
-      let parsedData: YojanaDidiResponse;
+      if (!responseText && lastErr) {
+        throw lastErr;
+      }
 
+      let parsedData: any;
       try {
         parsedData = JSON.parse(responseText);
-      } catch (err) {
-        console.warn("[Yojana Didi] JSON parse failed on raw output, cleaning up markdown wrapper if any", err);
+      } catch {
         const cleaned = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
         parsedData = JSON.parse(cleaned);
       }
@@ -93,34 +105,55 @@ User message: ${message || "Namaste"}
       if (!parsedData.language) {
         parsedData.language = detectedLang;
       }
+      if (!parsedData.ui_mode && parsedData.type) {
+        parsedData.ui_mode = parsedData.type;
+      }
 
-      // Safeguard: If turnCount >= 4 and model didn't set action_card, enforce action card
-      if (turnCount >= 4 && parsedData.ui_mode !== "action_card") {
-        const fallback = simulateYojanaDidiResponse(message, 4, parsedData.language || detectedLang);
-        parsedData.ui_mode = "action_card";
-        parsedData.action_card_details = fallback.action_card_details;
-        parsedData.spoken_response = fallback.spoken_response;
+      // Sanitize website_url
+      if (parsedData.website_url) {
+        const urlMatch = String(parsedData.website_url).match(/https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/[^\s,]*)?/);
+        if (urlMatch) {
+          let cleanUrl = urlMatch[0];
+          // Common government portals normalization
+          if (cleanUrl.includes("mudra")) cleanUrl = "https://www.mudra.org.in/";
+          else if (cleanUrl.includes("vishwakarma")) cleanUrl = "https://pmvishwakarma.gov.in/";
+          else if (cleanUrl.includes("svanidhi")) cleanUrl = "https://pmsvanidhi.mohua.gov.in/";
+          else if (cleanUrl.includes("irctc")) cleanUrl = "https://www.irctc.co.in/";
+          else if (cleanUrl.includes("pmjay") || cleanUrl.includes("ayushman")) cleanUrl = "https://pmjay.gov.in/";
+          else if (cleanUrl.includes("tnstc")) cleanUrl = "https://www.tnstc.in/";
+          else if (cleanUrl.includes("uidai")) cleanUrl = "https://uidai.gov.in/";
+          parsedData.website_url = cleanUrl;
+        } else {
+          parsedData.website_url = null;
+        }
       }
 
       return NextResponse.json(parsedData);
     } catch (apiError) {
-      console.error("[Yojana Didi] Gemini API Error, falling back to simulator:", apiError);
-      const fallbackResponse = simulateYojanaDidiResponse(message, turnCount, detectedLang);
-      return NextResponse.json(fallbackResponse);
+      console.error("[VANI] Gemini API Error, falling back to omniHandler:", apiError);
+      const omni = parseOmniIntent(message, detectedLang);
+      return NextResponse.json({
+        spoken_response: omni.spokenText,
+        language: detectedLang,
+        type: omni.type,
+        ui_mode: omni.type,
+        title: omni.title,
+        website_url: omni.websiteUrl || null,
+        website_label: omni.websiteLabel || null,
+        map_query: omni.mapQuery || null,
+        phone_hotline: omni.phoneHotline || null,
+        highlights: omni.documents || null
+      });
     }
   } catch (error) {
-    console.error("[Yojana Didi] Request error:", error);
+    console.error("[VANI] Request fatal error:", error);
     return NextResponse.json(
       {
-        spoken_response: "Maaf kijiye behen, thoda sa network ka chakkar aa gaya hai. Kya aap dobara bol sakti hain?",
-        ui_mode: "interview",
-        language: "hi",
-        action_card_details: {
-          scheme_name: null,
-          documents_needed: [],
-          where_to_go: "",
-          what_to_say: ""
-        }
+        spoken_response: "வணக்கம் சகோதரி, உங்கள் கேள்விக்குரிய தகவல்களை அருகில் உள்ள அரசு அலுவலகம் அல்லது சேவை மையத்தில் பெறலாம்.",
+        language: "ta",
+        type: "general",
+        ui_mode: "general",
+        title: "தகவல் உதவி"
       },
       { status: 200 }
     );

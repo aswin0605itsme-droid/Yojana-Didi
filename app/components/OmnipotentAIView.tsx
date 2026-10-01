@@ -19,7 +19,8 @@ import {
   Bus,
   Activity,
   Calendar,
-  AlertCircle
+  User,
+  Bot
 } from "lucide-react";
 import { parseOmniIntent, OmniQueryResult } from "../lib/omniHandler";
 import { detectLanguageFromText } from "../lib/languages";
@@ -31,6 +32,24 @@ interface UserCondition {
   capital: string;
 }
 
+interface ChatMessage {
+  id: string;
+  sender: "user" | "vani";
+  text: string;
+  data?: {
+    type?: string;
+    title?: string;
+    website_url?: string | null;
+    website_label?: string | null;
+    map_query?: string | null;
+    phone_hotline?: string | null;
+    highlights?: string[] | null;
+    documents?: string[] | null;
+    language?: string;
+    timingInfo?: string | null;
+  };
+}
+
 interface OmnipotentAIViewProps {
   userCondition: UserCondition;
   scheme: any;
@@ -39,7 +58,7 @@ interface OmnipotentAIViewProps {
   isListening?: boolean;
   interimText?: string;
   lastSpokenQuery?: string;
-  onSpeakText: (text: string) => void;
+  onSpeakText: (text: string, targetLang?: string) => void;
   onStartListening?: () => void;
   onStopListening?: () => void;
 }
@@ -58,43 +77,50 @@ export function OmnipotentAIView({
 }: OmnipotentAIViewProps) {
   const [inputText, setInputText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const hasSpokenWelcomeRef = useRef(false);
-
-  const [aiResponse, setAiResponse] = useState<OmniQueryResult & {
-    documents?: string[];
-    isSchemeDetail?: boolean;
-    schemeDetails?: {
-      name: string;
-      tagline: string;
-      steps: { title: string; detail: string }[];
-    };
-  } | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const schemeName = (scheme?.name as any)?.[lang] || scheme?.name?.en || "Government Scheme";
   const schemeTagline = (scheme?.tagline as any)?.[lang] || scheme?.tagline?.en || "";
 
-  // Proactive greeting upon arriving at the Omnipotent AI page
+  // Auto-scroll chat to bottom
+  const scrollToBottom = () => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isProcessing]);
+
+  // Initial welcome greeting
   useEffect(() => {
     if (!hasSpokenWelcomeRef.current) {
       hasSpokenWelcomeRef.current = true;
       const initialGreeting =
         lang === "ta"
-          ? `வணக்கம் சகோதரி! அரசு திட்டங்கள், இணையதள முகவரி, அரசு மருத்துவமனை, ரயில் புக்கிங், பேருந்து நேரம் அல்லது ஏதேனும் சந்தேகங்களை கேட்கலாம்.`
+          ? `வணக்கம் சகோதரி! அரசு திட்டங்கள், அதிகாரப்பூர்வ இணையதளம், மருத்துவமனை 108, ரயில் புக்கிங், பேருந்து நேரம் அல்லது ஏதேனும் சந்தேகங்களை கேட்கலாம்.`
           : lang === "hi"
           ? `नमस्ते बहन! सरकारी योजनाएं, वेबसाइट लिंक, अस्पताल, ट्रेन बुकिंग, बस समय या कोई भी सवाल मुझसे पूछ सकते हैं।`
-          : `Hello sister! Ask me about government schemes, official website links, hospitals, train booking, bus timings, or any doubts.`;
+          : `Hello sister! Ask me about government schemes, official websites, hospital 108, train bookings, bus timings, or any doubts.`;
 
-      setAiResponse({
-        type: "general",
-        title: lang === "ta" ? "வாணி வழிகாட்டி" : "VANI Guide",
-        spokenText: initialGreeting
-      });
+      const welcomeMsg: ChatMessage = {
+        id: "msg-welcome",
+        sender: "vani",
+        text: initialGreeting,
+        data: {
+          type: "general",
+          title: lang === "ta" ? "வாணி வழிகாட்டி" : "VANI Guide",
+          language: lang
+        }
+      };
 
-      onSpeakText(initialGreeting);
+      setMessages([welcomeMsg]);
+      onSpeakText(initialGreeting, lang);
     }
-  }, [lang, schemeName, schemeTagline, scheme, onSpeakText]);
+  }, [lang, onSpeakText]);
 
-  // React to speech input recognized by useVoice
+  // React to user spoken speech recognized by useVoice
   const lastProcessedSpeechRef = useRef("");
   useEffect(() => {
     if (lastSpokenQuery && lastSpokenQuery.trim() && lastSpokenQuery !== lastProcessedSpeechRef.current) {
@@ -105,135 +131,103 @@ export function OmnipotentAIView({
 
   // Handle any user query (typed, chip-tapped, or spoken)
   const handleQuery = async (query: string) => {
-    if (!query.trim()) return;
+    if (!query.trim() || isProcessing) return;
+
     playAudioBeep("chime");
+    const userQueryText = query.trim();
+
+    // 1. Immediately append User Message to chat
+    const userMsg: ChatMessage = {
+      id: `user-${Date.now()}`,
+      sender: "user",
+      text: userQueryText
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
     setIsProcessing(true);
 
-    const userLang = detectLanguageFromText(query) || lang;
-    const clean = query.toLowerCase();
+    const detectedLang = detectLanguageFromText(userQueryText) || lang || "ta";
 
-    // 1. Check for Required Documents request
-    if (
-      clean.includes("ஆவணங்கள்") ||
-      clean.includes("document") ||
-      clean.includes("documents") ||
-      clean.includes("दस्तावेज")
-    ) {
-      const respText =
-        lang === "ta"
-          ? "விண்ணப்பிக்க தேவையான முக்கிய ஆவணங்கள்: 1. ஆதார் அட்டை, 2. வங்கி கணக்கு பாஸ்புக், 3. இரண்டு பாஸ்போர்ட் அளவிலான புகைப்படங்கள்."
-          : lang === "hi"
-          ? "आवश्यक दस्तावेज: 1. आधार कार्ड, 2. बैंक पासबुक, 3. दो पासपोर्ट साइज फोटो।"
-          : "Main documents required: 1. Aadhaar Card, 2. Bank Passbook, 3. Two passport size photographs.";
-
-      setAiResponse({
-        type: "general",
-        title: lang === "ta" ? "தேவையான ஆவணங்கள்" : "Required Documents",
-        spokenText: respText,
-        documents: [
-          lang === "ta" ? "ஆதார் அட்டை (Aadhaar Card)" : "Aadhaar Card",
-          lang === "ta" ? "வங்கி கணக்கு பாஸ்புக் (Bank Passbook)" : "Bank Passbook",
-          lang === "ta" ? "2 பாஸ்போர்ட் புகைப்படங்கள் (2 Passport Photos)" : "2 Passport Photos",
-          lang === "ta" ? "வருமானச் சான்றிதழ் / ரேஷன் கார்டு" : "Ration Card / Income Certificate"
-        ]
-      });
-      setIsProcessing(false);
-      onSpeakText(respText);
-      return;
-    }
-
-    // 2. Check for Scheme Details / Benefits request
-    if (
-      clean.includes("scheme") ||
-      clean.includes("திட்டம்") ||
-      clean.includes("plan") ||
-      clean.includes("யோஜனா") ||
-      clean.includes("பலன்") ||
-      clean.includes("benefit")
-    ) {
-      const respText =
-        lang === "ta"
-          ? `உங்கள் நிலைக்கு ஏற்ற சிறந்த திட்டம்: ${schemeName}. ${schemeTagline}. விவரங்கள் கீழே கொடுக்கப்பட்டுள்ளன.`
-          : `The best scheme for your condition is: ${schemeName}. ${schemeTagline}. Details are shown below.`;
-
-      setAiResponse({
-        type: "website",
-        title: schemeName,
-        spokenText: respText,
-        isSchemeDetail: true,
-        schemeDetails: {
-          name: schemeName,
-          tagline: schemeTagline,
-          steps: scheme?.steps?.map((s: any) => ({
-            title: (s.title as any)?.[lang] || s.title?.en || "",
-            detail: (s.detail as any)?.[lang] || s.detail?.en || ""
-          })) || []
-        },
-        websiteUrl: scheme?.official_website || "https://www.mudra.org.in/",
-        websiteLabel: schemeName
-      });
-      setIsProcessing(false);
-      onSpeakText(respText);
-      return;
-    }
-
-    // 3. Fast Omnipresent Multi-Intent Check (Hospitals, Trains, Buses, Websites, Locations)
-    const omni = parseOmniIntent(query, userLang);
-    if (
-      omni.type === "hospital" ||
-      omni.type === "train" ||
-      omni.type === "bus" ||
-      omni.type === "website" ||
-      omni.type === "location"
-    ) {
-      setAiResponse(omni);
-      setIsProcessing(false);
-      onSpeakText(omni.spokenText);
-      return;
-    }
-
-    // 4. Call Live Gemini API with full condition context
     try {
+      // Send query to live Gemini 3.5 Flash Lite API
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `${query} [User condition context: work=${userCondition.work}, setup=${userCondition.setup}, capital=${userCondition.capital}, recommendedScheme=${schemeName}]`,
-          language: userLang,
-          turnCount: 4
+          message: userQueryText,
+          language: detectedLang,
+          userCondition: {
+            work: userCondition.work,
+            setup: userCondition.setup,
+            capital: userCondition.capital,
+            recommendedScheme: schemeName
+          }
         })
       });
 
       if (res.ok) {
         const data = await res.json();
-        const spoken = data.spoken_response || data.text || (lang === "ta" ? "விவரங்கள் கீழே கொடுக்கப்பட்டுள்ளன." : "Details are provided below.");
-        const respObj: any = {
-          type: "general",
-          title: lang === "ta" ? "வாணி தகவல்" : "VANI Assistance",
-          spokenText: spoken
+        const spoken = data.spoken_response || data.text || "விவரங்கள் இதோ.";
+        const respLang = data.language || detectedLang;
+
+        const vaniMsg: ChatMessage = {
+          id: `vani-${Date.now()}`,
+          sender: "vani",
+          text: spoken,
+          data: {
+            type: data.type || data.ui_mode || "general",
+            title: data.title || (respLang === "ta" ? "வாணி தகவல்" : "VANI Assistance"),
+            website_url: data.website_url || null,
+            website_label: data.website_label || null,
+            map_query: data.map_query || null,
+            phone_hotline: data.phone_hotline || null,
+            highlights: data.highlights || data.documents || null,
+            language: respLang
+          }
         };
-        if (data.map_query) respObj.mapQuery = data.map_query;
-        if (data.website_url) {
-          respObj.websiteUrl = data.website_url;
-          respObj.websiteLabel = data.website_label || "Official Government Portal";
-        }
-        setAiResponse(respObj);
-        onSpeakText(spoken);
+
+        setMessages((prev) => [...prev, vaniMsg]);
+        onSpeakText(spoken, respLang);
       } else {
-        const fallback =
-          lang === "ta"
-            ? "நீங்கள் அருகில் உள்ள அரசு வங்கி, பொது சேவை மையம் அல்லது அரசு அலுவலகத்தில் நேரில் விண்ணப்பிக்கலாம்."
-            : "You can apply directly at the nearest government bank, service center, or office.";
-        setAiResponse({ type: "general", title: "Information", spokenText: fallback });
-        onSpeakText(fallback);
+        // Fallback using local omniHandler if network issue
+        const omni = parseOmniIntent(userQueryText, detectedLang);
+        const vaniMsg: ChatMessage = {
+          id: `vani-${Date.now()}`,
+          sender: "vani",
+          text: omni.spokenText,
+          data: {
+            type: omni.type,
+            title: omni.title,
+            website_url: omni.websiteUrl || null,
+            website_label: omni.websiteLabel || null,
+            map_query: omni.mapQuery || null,
+            phone_hotline: omni.phoneHotline || null,
+            highlights: omni.documents || null,
+            language: detectedLang
+          }
+        };
+        setMessages((prev) => [...prev, vaniMsg]);
+        onSpeakText(omni.spokenText, detectedLang);
       }
-    } catch (_) {
-      const fallback =
-        lang === "ta"
-          ? "உங்கள் கேள்விக்கு அருகில் உள்ள அரசு அலுவலகம் அல்லது சேவை மையத்தை அணுகலாம்."
-          : "Please visit the nearest government office or service center for assistance.";
-      setAiResponse({ type: "general", title: "Information", spokenText: fallback });
-      onSpeakText(fallback);
+    } catch (err) {
+      console.error("[OmniAI] Error processing query:", err);
+      const omni = parseOmniIntent(userQueryText, detectedLang);
+      const vaniMsg: ChatMessage = {
+        id: `vani-${Date.now()}`,
+        sender: "vani",
+        text: omni.spokenText,
+        data: {
+          type: omni.type,
+          title: omni.title,
+          website_url: omni.websiteUrl || null,
+          website_label: omni.websiteLabel || null,
+          map_query: omni.mapQuery || null,
+          phone_hotline: omni.phoneHotline || null,
+          language: detectedLang
+        }
+      };
+      setMessages((prev) => [...prev, vaniMsg]);
+      onSpeakText(omni.spokenText, detectedLang);
     } finally {
       setIsProcessing(false);
     }
@@ -248,360 +242,252 @@ export function OmnipotentAIView({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between max-w-xl w-full mx-auto px-2 sm:px-4 py-2 animate-in fade-in duration-500">
-      {/* MAIN OMNIPOTENT AI CARD */}
-      <div className="w-full bg-emerald-50/40 sm:bg-white border-2 border-emerald-400 rounded-3xl p-4 sm:p-5 shadow-lg space-y-3.5">
-        {/* CARD HEADER: Emerald icon + Title + Subtitle + Description */}
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-yellow-500 flex items-center justify-center text-white shadow-md shrink-0">
-            <Sparkles className="w-6 h-6 animate-pulse text-yellow-200" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-black text-emerald-950 leading-tight">
-              {lang === "ta"
-                ? "வாணி ஜெமினி உதவியாளர்"
-                : lang === "hi"
-                ? "वाणी जेमिनी सहायक"
-                : "VANI Gemini Assistant"}
-            </h2>
-            <div className="text-sm font-black text-emerald-800 mt-0.5">
-              (Omnipresent AI)
+    <div className="flex-1 flex flex-col justify-between max-w-xl w-full mx-auto px-2 sm:px-4 py-2 animate-in fade-in duration-300 h-full">
+      {/* MAIN OMNIPOTENT CONTAINER */}
+      <div className="w-full flex-1 flex flex-col bg-white border-2 border-emerald-400 rounded-3xl p-3 sm:p-4 shadow-xl space-y-3 min-h-[520px]">
+        {/* CARD HEADER: Emerald icon + Title + Subtitle */}
+        <div className="flex items-center justify-between gap-3 pb-2 border-b border-emerald-100">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-yellow-500 flex items-center justify-center text-white shadow-md shrink-0">
+              <Sparkles className="w-5 h-5 animate-pulse text-yellow-200" />
             </div>
-            <p className="text-xs font-semibold text-stone-600 mt-1 leading-snug">
-              {lang === "ta"
-                ? "திட்டம், இணையதளம், மருத்துவமனை, ரயில், பேருந்து நேரம், இடங்கள் கேளுங்கள்"
-                : lang === "hi"
-                ? "योजनाएं, वेबसाइट, अस्पताल, ट्रेन बुकिंग, बस समय या कोई भी सवाल पूछें"
-                : "Ask schemes, portals, hospitals, train booking, bus timings, locations"}
-            </p>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-black text-emerald-950 truncate leading-tight">
+                {lang === "ta"
+                  ? "வாணி ஜெமினி உதவியாளர்"
+                  : lang === "hi"
+                  ? "वाणी जेमिनी सहायक"
+                  : "VANI Gemini Assistant"}
+              </h2>
+              <p className="text-[11px] font-bold text-emerald-800">
+                {lang === "ta"
+                  ? "திட்டம் • மருத்துவமனை • ரயில் • பேருந்து • மேப்"
+                  : "Schemes • Hospitals • Trains • Buses • Maps"}
+              </p>
+            </div>
+          </div>
+
+          <div className="px-2.5 py-1 rounded-full bg-emerald-100/80 border border-emerald-300 text-[10px] font-black text-emerald-900 shrink-0">
+            Omnipresent AI
           </div>
         </div>
 
         {/* 5 COMPREHENSIVE QUICK ACTION PILLS */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {/* 1. Government Hospital & 108 Emergency */}
+        <div className="flex flex-wrap gap-1.5 pt-0.5">
+          {/* 1. Hospital & 108 */}
           <button
             type="button"
-            onClick={() => handleQuery("அரசு மருத்துவமனை மற்றும் 108 அவசர உதவி")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            onClick={() => handleQuery(lang === "ta" ? "அரசு மருத்துவமனை மற்றும் 108 அவசர சிகிச்சை" : "Government Hospital and 108 emergency")}
+            className="px-2.5 py-1 rounded-full text-[11px] font-black bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
           >
-            <Activity className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-            <span>
-              {lang === "ta"
-                ? "மருத்துவமனை & 108"
-                : lang === "hi"
-                ? "अस्पताल और 108"
-                : "Hospital & 108"}
-            </span>
+            <Activity className="w-3 h-3 text-rose-600 shrink-0" />
+            <span>{lang === "ta" ? "மருத்துவமனை & 108" : "Hospital & 108"}</span>
           </button>
 
-          {/* 2. Train Booking & Railway Station */}
+          {/* 2. Train Booking & Station */}
           <button
             type="button"
-            onClick={() => handleQuery("ரயில் புக்கிங் மற்றும் ரயில்வே ஸ்டேஷன்")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            onClick={() => handleQuery(lang === "ta" ? "ரயில் புக்கிங் ஐஆர்சிடிசி மற்றும் ரயில்வே ஸ்டேஷன்" : "IRCTC train ticket booking and railway station")}
+            className="px-2.5 py-1 rounded-full text-[11px] font-black bg-sky-50 hover:bg-sky-100 border border-sky-300 text-sky-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
           >
-            <Train className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-            <span>
-              {lang === "ta"
-                ? "ரயில் புக்கிங் & ஸ்டேஷன்"
-                : lang === "hi"
-                ? "ट्रेन टिकट और स्टेशन"
-                : "Train Booking & Station"}
-            </span>
+            <Train className="w-3 h-3 text-sky-700 shrink-0" />
+            <span>{lang === "ta" ? "ரயில் புக்கிங் & ஸ்டேஷன்" : "Train & Station"}</span>
           </button>
 
           {/* 3. Bus Stops & Timings */}
           <button
             type="button"
-            onClick={() => handleQuery("அரசு பேருந்து நிலையம் மற்றும் பேருந்து நேரம்")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            onClick={() => handleQuery(lang === "ta" ? "அரசு பேருந்து நிலையம் மற்றும் பேருந்து நேரம்" : "Government bus stand and bus timings")}
+            className="px-2.5 py-1 rounded-full text-[11px] font-black bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
           >
-            <Bus className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-            <span>
-              {lang === "ta"
-                ? "பேருந்து நிலையம் & நேரம்"
-                : lang === "hi"
-                ? "बस स्टैंड और समय"
-                : "Bus Stand & Timings"}
-            </span>
+            <Bus className="w-3 h-3 text-teal-700 shrink-0" />
+            <span>{lang === "ta" ? "பேருந்து நேரம்" : "Bus Timings"}</span>
           </button>
 
           {/* 4. Nearest Bank & Locations */}
           <button
             type="button"
-            onClick={() => handleQuery("அருகிலுள்ள அரசு வங்கி எங்கே?")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-yellow-50 hover:bg-yellow-100 border border-yellow-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            onClick={() => handleQuery(lang === "ta" ? "அருகிலுள்ள அரசு வங்கி எங்கே உள்ளது?" : "Nearest government bank branch location")}
+            className="px-2.5 py-1 rounded-full text-[11px] font-black bg-yellow-50 hover:bg-yellow-100 border border-yellow-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
           >
-            <MapPin className="w-3.5 h-3.5 text-yellow-700 shrink-0" />
-            <span>
-              {lang === "ta"
-                ? "அருகிலுள்ள அரசு வங்கி"
-                : lang === "hi"
-                ? "नजदीकी बैंक"
-                : "Nearest Bank"}
-            </span>
+            <MapPin className="w-3 h-3 text-yellow-700 shrink-0" />
+            <span>{lang === "ta" ? "அருகிலுள்ள வங்கி" : "Nearest Bank"}</span>
           </button>
 
           {/* 5. Official Website Portal */}
           <button
             type="button"
-            onClick={() => handleQuery("அதிகாரப்பூர்வ அரசு இணையதள முகவரி")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-white hover:bg-emerald-50 border border-emerald-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            onClick={() => handleQuery(lang === "ta" ? "அதிகாரப்பூர்வ அரசு இணையதள முகவரி" : "Official government scheme portal")}
+            className="px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
           >
-            <Globe className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-            <span>
-              {lang === "ta"
-                ? "அதிகாரப்பூர்வ தளம்"
-                : lang === "hi"
-                ? "सरकारी वेबसाइट"
-                : "Official Portal"}
-            </span>
+            <Globe className="w-3 h-3 text-emerald-700 shrink-0" />
+            <span>{lang === "ta" ? "அரசு தளம்" : "Official Portal"}</span>
           </button>
         </div>
 
-        {/* INTERACTIVE RESPONSE BUBBLE & RICH MULTI-INTENT CARDS */}
-        {aiResponse && (
-          <div className="w-full bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm space-y-3 animate-in fade-in zoom-in-98">
-            {/* Spoken Text Bubble */}
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm sm:text-base font-bold text-emerald-950 leading-relaxed flex-1">
-                &ldquo;{aiResponse.spokenText}&rdquo;
-              </p>
-              <button
-                type="button"
-                onClick={() => onSpeakText(aiResponse.spokenText)}
-                className="p-2 rounded-full hover:bg-emerald-50 text-emerald-700 shrink-0 transition-all active:scale-90 cursor-pointer"
-                title="Hear again / மீண்டும் கேள்"
+        {/* CHAT MESSAGES SCROLL STREAM */}
+        <div className="flex-1 overflow-y-auto max-h-[380px] sm:max-h-[420px] space-y-3 pr-1 py-1 scroll-smooth">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"} animate-in fade-in duration-200`}
+            >
+              {/* Sender Tag */}
+              <div className="flex items-center gap-1 mb-1 text-[11px] font-bold text-stone-500 px-1">
+                {msg.sender === "user" ? (
+                  <>
+                    <span>{lang === "ta" ? "நீங்கள்" : "You"}</span>
+                    <User className="w-3 h-3 text-emerald-700" />
+                  </>
+                ) : (
+                  <>
+                    <Bot className="w-3.5 h-3.5 text-emerald-700" />
+                    <span className="text-emerald-900 font-extrabold">வாணி (VANI)</span>
+                  </>
+                )}
+              </div>
+
+              {/* Message Bubble */}
+              <div
+                className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-3.5 shadow-sm text-sm ${
+                  msg.sender === "user"
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-semibold rounded-tr-xs"
+                    : "bg-emerald-50/70 border-2 border-emerald-300 text-emerald-950 font-bold rounded-tl-xs space-y-2.5"
+                }`}
               >
-                <Volume2 className="w-5 h-5" />
-              </button>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="leading-relaxed flex-1 whitespace-pre-wrap">{msg.text}</p>
+                  {msg.sender === "vani" && (
+                    <button
+                      type="button"
+                      onClick={() => onSpeakText(msg.text, msg.data?.language || lang)}
+                      className="p-1.5 rounded-full hover:bg-emerald-200/60 text-emerald-800 shrink-0 active:scale-90 transition-all cursor-pointer"
+                      title="Hear again / மீண்டும் கேள்"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* RICH ACTION CARDS FOR VANI RESPONSES */}
+                {msg.data && (
+                  <div className="space-y-2 pt-1">
+                    {/* A. EMERGENCY CALL BUTTON (108, 139) */}
+                    {msg.data.phone_hotline && (
+                      <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50 border border-rose-300 text-rose-950">
+                        <div className="flex items-center gap-1.5 text-xs font-black">
+                          <Activity className="w-4 h-4 text-rose-600 animate-pulse" />
+                          <span>{lang === "ta" ? "அவசர உதவி எண்:" : "Emergency Helpline:"}</span>
+                        </div>
+                        <a
+                          href={`tel:${msg.data.phone_hotline}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs active:scale-95 transition-all"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5" />
+                          <span>{msg.data.phone_hotline} அழைக்க</span>
+                        </a>
+                      </div>
+                    )}
+
+                    {/* B. OFFICIAL GOVERNMENT WEBSITE BUTTON */}
+                    {msg.data.website_url && (
+                      <a
+                        href={msg.data.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-yellow-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-98 transition-all"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Globe className="w-4 h-4 shrink-0 text-yellow-200" />
+                          <span className="truncate">{msg.data.website_label || msg.data.website_url}</span>
+                        </div>
+                        <ExternalLink className="w-4 h-4 shrink-0" />
+                      </a>
+                    )}
+
+                    {/* C. HIGHLIGHTS & KEY DOCUMENTS */}
+                    {msg.data.highlights && msg.data.highlights.length > 0 && (
+                      <div className="space-y-1 p-2 rounded-xl bg-white border border-emerald-200 text-xs font-semibold text-emerald-950">
+                        <div className="text-[10px] font-black uppercase text-emerald-800 tracking-wider">
+                          {lang === "ta" ? "முக்கிய தகவல்கள்:" : "Key Highlights:"}
+                        </div>
+                        {msg.data.highlights.map((h, i) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                            <span>{h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* D. LIVE GOOGLE MAPS EMBED */}
+                    {msg.data.map_query && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="w-full h-36 rounded-xl overflow-hidden border border-emerald-400 shadow-inner bg-emerald-50">
+                          <iframe
+                            title="Location Map"
+                            width="100%"
+                            height="100%"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                              msg.data.map_query
+                            )}&output=embed`}
+                          />
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            msg.data.map_query
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-black text-xs transition-all"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>
+                            {lang === "ta"
+                              ? `கூகிள் மேப்பில் பார்க்க: ${msg.data.map_query}`
+                              : `Open in Google Maps: ${msg.data.map_query}`}
+                          </span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
+          ))}
 
-            {/* A. HOSPITAL & EMERGENCY HOTLINE CARD */}
-            {aiResponse.type === "hospital" && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 to-orange-50 border-2 border-rose-300 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-rose-600 animate-pulse" />
-                    <span className="text-xs font-black text-rose-950 uppercase tracking-wide">
-                      {lang === "ta" ? "அரசு மருத்துவ அவசர உதவி" : "Government Medical Emergency"}
-                    </span>
-                  </div>
-                  {aiResponse.phoneHotline && (
-                    <a
-                      href={`tel:${aiResponse.phoneHotline}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-xs active:scale-95 transition-all"
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" />
-                      <span>{lang === "ta" ? "108 அழைக்க" : "Call 108"}</span>
-                    </a>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-bold text-stone-800">
-                  <div className="p-2 rounded-xl bg-white border border-rose-200 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{lang === "ta" ? "24 மணி நேர இலவச அவசர சிகிச்சை" : "24/7 Free Emergency Treatment"}</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-white border border-rose-200 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{lang === "ta" ? "ஆயுஷ்மான் பாரத் இலவச மருத்துவ அட்டை" : "Ayushman Bharat Card Accepted"}</span>
-                  </div>
-                </div>
-
-                {aiResponse.websiteUrl && (
-                  <a
-                    href={aiResponse.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white hover:bg-rose-50 border border-rose-300 text-rose-900 font-bold text-xs transition-all shadow-2xs"
-                  >
-                    <span>{aiResponse.websiteLabel || "Ayushman Bharat National Health Portal"}</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-rose-600" />
-                  </a>
-                )}
+          {/* VANI IS THINKING / PROCESSING INDICATOR */}
+          {isProcessing && (
+            <div className="flex flex-col items-start animate-in fade-in">
+              <div className="flex items-center gap-1 mb-1 text-[11px] font-bold text-stone-500 px-1">
+                <Bot className="w-3.5 h-3.5 text-emerald-700 animate-spin" />
+                <span className="text-emerald-900 font-extrabold">வாணி (VANI)</span>
               </div>
-            )}
-
-            {/* B. TRAIN BOOKING & RAILWAY HELPLINE CARD */}
-            {aiResponse.type === "train" && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-50 to-indigo-50 border-2 border-sky-300 space-y-3 shadow-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Train className="w-5 h-5 text-sky-600" />
-                    <span className="text-xs font-black text-sky-950 uppercase tracking-wide">
-                      {lang === "ta" ? "அதிகாரப்பூர்வ ரயில்வே சேவை" : "Official Railway Service"}
-                    </span>
-                  </div>
-                  {aiResponse.phoneHotline && (
-                    <a
-                      href={`tel:${aiResponse.phoneHotline}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black shadow-xs active:scale-95 transition-all"
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" />
-                      <span>{lang === "ta" ? "139 அழைக்க" : "Call 139"}</span>
-                    </a>
-                  )}
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-white border border-sky-200 text-xs text-stone-800 space-y-1">
-                  <div className="font-black text-sky-950">
-                    {lang === "ta" ? "டிக்கெட் முன்பதிவு & PNR விசாரணை:" : "Ticket Booking & PNR Inquiry:"}
-                  </div>
-                  <div className="text-[11px] text-stone-600">
-                    {lang === "ta"
-                      ? "IRCTC தளத்தில் அரசு அனுமதியுடன் குறைந்த கட்டணத்தில் ரயில் டிக்கெட் புக் செய்யலாம்."
-                      : "Book confirmed railway tickets directly on IRCTC with zero agent commission."}
-                  </div>
-                </div>
-
-                {aiResponse.websiteUrl && (
-                  <a
-                    href={aiResponse.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-98 transition-all"
-                  >
-                    <span>{lang === "ta" ? "IRCTC-ல் டிக்கெட் புக் செய்ய" : "Book Tickets on IRCTC Portal"}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
+              <div className="px-4 py-3 rounded-2xl rounded-tl-xs bg-emerald-100/70 border-2 border-emerald-300 text-emerald-900 flex items-center gap-2 font-bold text-xs shadow-xs">
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-700" />
+                <span>
+                  {lang === "ta"
+                    ? "வாணி பதிலளிக்கிறாள்..."
+                    : lang === "hi"
+                    ? "वाणी सोच रही है..."
+                    : "VANI is preparing your answer..."}
+                </span>
+                <span className="flex gap-1 ml-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"></span>
+                </span>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* C. BUS STAND & TIMINGS CARD */}
-            {aiResponse.type === "bus" && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 space-y-3 shadow-xs">
-                <div className="flex items-center gap-2">
-                  <Bus className="w-5 h-5 text-emerald-600" />
-                  <span className="text-xs font-black text-emerald-950 uppercase tracking-wide">
-                    {lang === "ta" ? "அரசு பேருந்து சேவை & நேரம்" : "Government Bus Transit & Timings"}
-                  </span>
-                </div>
-
-                {aiResponse.timingInfo && (
-                  <div className="p-2.5 rounded-xl bg-white border border-emerald-200 text-xs font-bold text-emerald-950 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{aiResponse.timingInfo}</span>
-                  </div>
-                )}
-
-                {aiResponse.websiteUrl && (
-                  <a
-                    href={aiResponse.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-98 transition-all"
-                  >
-                    <span>{lang === "ta" ? "அரசு பேருந்து முன்பதிவு தளம்" : "State Bus Reservation Portal"}</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* D. OFFICIAL GOVERNMENT WEBSITE PORTAL CARD */}
-            {aiResponse.websiteUrl && aiResponse.type !== "hospital" && aiResponse.type !== "train" && aiResponse.type !== "bus" && (
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-yellow-50 border border-emerald-400 flex items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Globe className="w-5 h-5 text-emerald-700 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-950">
-                      Official Government Portal
-                    </div>
-                    <div className="text-xs font-semibold text-stone-600 truncate max-w-[200px] sm:max-w-xs">
-                      {aiResponse.websiteUrl}
-                    </div>
-                  </div>
-                </div>
-                <a
-                  href={aiResponse.websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 flex items-center gap-1.5"
-                >
-                  <span>{lang === "ta" ? "நேரடியாக செல்லவும்" : "Open Portal"}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            )}
-
-            {/* E. REQUIRED DOCUMENTS CHECKLIST */}
-            {aiResponse.documents && (
-              <div className="space-y-1.5 pt-2 border-t border-emerald-100">
-                <div className="text-xs font-black text-emerald-900 uppercase tracking-wider">
-                  {lang === "ta" ? "ஆவணங்களின் பட்டியல்:" : "List of Documents:"}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {aiResponse.documents.map((doc, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-300 text-xs font-bold text-emerald-950 flex items-center gap-2"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>{doc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* F. SCHEME DETAILS & STEPS */}
-            {aiResponse.isSchemeDetail && aiResponse.schemeDetails && (
-              <div className="space-y-2 pt-2 border-t border-emerald-100">
-                <div className="text-xs font-black text-emerald-900">
-                  {aiResponse.schemeDetails.name} — {aiResponse.schemeDetails.tagline}
-                </div>
-                {aiResponse.schemeDetails.steps.map((st, i) => (
-                  <div
-                    key={i}
-                    className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-200 text-xs text-emerald-950"
-                  >
-                    <span className="font-black text-emerald-800">{i + 1}. {st.title}: </span>
-                    {st.detail}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* G. LIVE GOOGLE MAPS EMBED FOR ANY LOCATION QUERY */}
-            {aiResponse.mapQuery && (
-              <div className="space-y-2 pt-1">
-                <div className="w-full h-44 rounded-xl overflow-hidden border border-emerald-400 shadow-inner bg-emerald-50/20">
-                  <iframe
-                    title="Live Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                      aiResponse.mapQuery
-                    )}&output=embed`}
-                  />
-                </div>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    aiResponse.mapQuery
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-yellow-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-98 transition-all"
-                >
-                  <Navigation className="w-3.5 h-3.5" />
-                  <span>
-                    {lang === "ta"
-                      ? `கூகிள் மேப்பில் வழியைப் பார்க்க: ${aiResponse.mapQuery}`
-                      : `Open in Google Maps: ${aiResponse.mapQuery}`}
-                  </span>
-                </a>
-              </div>
-            )}
-          </div>
-        )}
+          <div ref={chatBottomRef} />
+        </div>
 
         {/* BOTTOM INPUT BAR: MIC & OUTLINED TEXT BOX */}
-        <div className="pt-2 flex items-center gap-2.5">
+        <div className="pt-1.5 flex items-center gap-2">
           {/* Rounded Emerald & Gold Mic Button */}
           {onStartListening && (
             <button
@@ -622,7 +508,7 @@ export function OmnipotentAIView({
             </button>
           )}
 
-          {/* Pill-shaped Text Input Box with Send Button */}
+          {/* High-contrast Outlined Text Input Box with Send Button */}
           <form onSubmit={handleFormSubmit} className="flex-1 relative flex items-center min-w-0">
             <input
               type="text"
@@ -635,12 +521,12 @@ export function OmnipotentAIView({
                   ? "योजना, अस्पताल, ट्रेन, बस समय या सवाल पूछें..."
                   : "Ask schemes, hospital, train, bus timings, doubts..."
               }
-              className="w-full py-3 sm:py-3.5 pl-4 sm:pl-5 pr-12 text-xs sm:text-sm text-emerald-950 placeholder:text-stone-400 bg-white border-2 border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-yellow-400 rounded-full focus:outline-hidden font-medium shadow-2xs"
+              className="w-full py-3 pl-4 pr-11 text-xs sm:text-sm text-emerald-950 placeholder:text-stone-400 bg-white border-2 border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-yellow-400 rounded-full focus:outline-hidden font-medium shadow-2xs"
             />
             <button
               type="submit"
               disabled={!inputText.trim() || isProcessing}
-              className="absolute right-1.5 p-2 rounded-full bg-gradient-to-tr from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white disabled:opacity-30 transition-all cursor-pointer shadow-xs"
+              className="absolute right-1 p-2 rounded-full bg-gradient-to-tr from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white disabled:opacity-30 transition-all cursor-pointer shadow-xs"
               aria-label="Send"
             >
               {isProcessing ? (
@@ -652,7 +538,7 @@ export function OmnipotentAIView({
           </form>
         </div>
 
-        {/* Live Speech Feedback Bar */}
+        {/* Live Speech Recognition Feedback */}
         {isListening && interimText && (
           <div className="text-xs font-bold text-emerald-950 bg-yellow-100 border border-yellow-400 rounded-xl px-3 py-1.5 text-center animate-in fade-in">
             &ldquo;{interimText}&rdquo;

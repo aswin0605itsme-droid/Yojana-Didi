@@ -1,0 +1,20 @@
+{
+  "appName": "VANI",
+  "sisterName": "VANI Didi",
+  "welcomeGreeting": "Hello! I am VANI Didi. To know government schemes tap the microphone or type below.",
+  "welcomeGreetingEnglish": "Hello! I am VANI Didi. To know government schemes tap the microphone or type below.",
+  "orType": "or type",
+  "typePlaceholder": "Type your question here...",
+  "nudge1": "Tap the big mic button to speak, or type below.",
+  "nudge1English": "Tap the big mic button to speak, or type below.",
+  "nudge2": "I am here to guide you. Just ask anything.",
+  "nudge2English": "I am here to guide you. Just ask anything.",
+  "micPermissionNotice": "A permission box will appear. Please tap 'Allow'.",
+  "micPermissionEnglish": "A permission box will appear. Please tap 'Allow'.",
+  "micUnavailable": "Microphone unavailable. Please type your message in the box below.",
+  "micUnavailableEnglish": "Microphone unavailable. Please type your message in the box below.",
+  "hearAgain": "Hear again",
+  "listening": "Listening... speak now",
+  "thinking": "Thinking...",
+  "send": "Send"
+}

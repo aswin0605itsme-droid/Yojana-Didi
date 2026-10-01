@@ -14,23 +14,23 @@ import {
   Sparkles,
   ShieldCheck,
   Building2,
-  CheckSquare,
   Square
 } from "lucide-react";
 import { ActionCardDetails } from "../types";
+import { LanguageConfig } from "../lib/languages";
 
 interface ActionCardProps {
   details: ActionCardDetails;
+  currentLanguage: LanguageConfig;
   onSpeak: (text: string) => void;
   onReset: () => void;
 }
 
-export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
+export function ActionCard({ details, currentLanguage, onSpeak, onReset }: ActionCardProps) {
   const [checkedDocs, setCheckedDocs] = useState<{ [key: string]: boolean }>({});
   const [hasPracticed, setHasPracticed] = useState(false);
 
   useEffect(() => {
-    // Launch celebratory confetti
     try {
       confetti({
         particleCount: 80,
@@ -54,12 +54,12 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
   };
 
   const handleWhatsAppShare = () => {
-    const text = `*Yojana Didi - Sarkari Sahayata Parchi*\n\n` +
-      `📋 *Yojana:* ${details.scheme_name || "Sarkari Sahayata"}\n` +
-      `📍 *Kahan Jana Hai:* ${details.where_to_go}\n` +
-      `📄 *Zaroori Dastawez:*\n${details.documents_needed.map((d) => `• ${d}`).join("\n")}\n\n` +
-      `🗣️ *Afsar se kya bolna hai:*\n"${details.what_to_say}"\n\n` +
-      `_Didi ke sath aasan bhasha mein banayi gayi parchi_`;
+    const text = `*Yojana Didi - ${currentLanguage.ui.actionCardReady}*\n\n` +
+      `📋 *${currentLanguage.ui.sarkariSupport}:* ${details.scheme_name || "Sarkari Sahayata"}\n` +
+      `📍 *${currentLanguage.ui.whereToGo}:* ${details.where_to_go}\n` +
+      `📄 *${currentLanguage.ui.documentsNeeded}:*\n${details.documents_needed.map((d) => `• ${d}`).join("\n")}\n\n` +
+      `🗣️ *${currentLanguage.ui.whatToSay}:*\n"${details.what_to_say}"\n\n` +
+      `_${currentLanguage.ui.tagline}_`;
 
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
@@ -75,13 +75,13 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
       {/* Celebration Header */}
       <div className="text-center space-y-1">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5" /> Aapka Rasta Tayyar Hai!
+          <Sparkles className="w-3.5 h-3.5" /> {currentLanguage.ui.actionCardReady}
         </span>
         <h2 className="text-xl sm:text-2xl font-black text-amber-950">
-          Aapki Sahayata Parchi
+          {details.scheme_name || "Sarkari Sahayata Parchi"}
         </h2>
         <p className="text-xs text-amber-900/80 font-medium">
-          Yeh parchi lekar jaiye, aapka kaam aasan hoga.
+          {currentLanguage.ui.noCollateral}
         </p>
       </div>
 
@@ -94,13 +94,13 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
         <div className="flex items-start justify-between border-b border-amber-200/80 pb-4">
           <div className="space-y-1">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-sm border border-amber-200">
-              Bharat Sarkar Sahayata
+              {currentLanguage.ui.sarkariSupport}
             </span>
             <h3 className="text-lg sm:text-xl font-black text-amber-950 flex items-center gap-2">
               {details.scheme_name || "Pradhan Mantri Sahayata Yojana"}
             </h3>
             <p className="text-xs font-medium text-emerald-800 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Bina zameen ya ghar girvi rakhe
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> {currentLanguage.ui.noCollateral}
             </p>
           </div>
 
@@ -117,13 +117,13 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
             <div className="p-1.5 bg-amber-500 text-white rounded-lg shadow-2xs">
               <MapPin className="w-4 h-4" />
             </div>
-            <span>Kahan Jana Hai? (Where to Go)</span>
+            <span>{currentLanguage.ui.whereToGo}</span>
           </div>
           <p className="text-sm font-semibold text-amber-900 pl-7 leading-relaxed">
-            {details.where_to_go || "Nearest Sarkari Bank Branch ya Gram Panchayat / CSC Kendra"}
+            {details.where_to_go || "Nearest SBI ya Gramin Bank Branch"}
           </p>
           <p className="text-xs text-amber-800/80 pl-7">
-            💡 <em>Tip: Somwar se Shukrawar, subah 11 baje se 2 baje ke beech jaana sabse accha rehta hai.</em>
+            💡 <em>{currentLanguage.ui.whereToGoTip}</em>
           </p>
         </div>
 
@@ -134,10 +134,10 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
               <div className="p-1.5 bg-orange-500 text-white rounded-lg shadow-2xs">
                 <FileText className="w-4 h-4" />
               </div>
-              <span>Kya Sath Le Jana Hai? (Documents)</span>
+              <span>{currentLanguage.ui.documentsNeeded}</span>
             </div>
             <span className="text-[11px] text-amber-800 font-medium">
-              Bag mein rakhein aur tick karein
+              {currentLanguage.ui.documentsTip}
             </span>
           </div>
 
@@ -178,7 +178,7 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
               <div className="p-1.5 bg-rose-500 text-white rounded-lg shadow-2xs">
                 <MessageCircle className="w-4 h-4" />
               </div>
-              <span>Afsar Se Kya Bolna Hai? (Golden Script)</span>
+              <span>{currentLanguage.ui.whatToSay}</span>
             </div>
           </div>
 
@@ -195,11 +195,11 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
               className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-700 hover:to-orange-600 text-white shadow-md active:scale-98 transition-all"
             >
               <Volume2 className="w-4 h-4" />
-              <span>Didi Ki Awaaz Mein Suno (Rehearsal)</span>
+              <span>{currentLanguage.ui.listenRehearsal}</span>
             </button>
             {hasPracticed && (
               <span className="text-xs font-semibold text-emerald-800 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Badhiya! Ab aap bina dare bol sakti hain.
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {currentLanguage.ui.practicedBadge}
               </span>
             )}
           </div>
@@ -207,7 +207,7 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
 
         {/* Footer Note */}
         <div className="text-center pt-1 text-[11px] text-amber-800/70 border-t border-amber-200/50">
-          Aapka adhikar hai sarkar se sahayata paana. Didi hamesha aapke sath hain!
+          {currentLanguage.ui.tagline}
         </div>
       </div>
 
@@ -218,7 +218,7 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold bg-white text-amber-950 border border-amber-300 hover:bg-amber-50 shadow-sm transition-all"
         >
           <Printer className="w-4 h-4 text-amber-700" />
-          <span>Parchi Print / PDF</span>
+          <span>{currentLanguage.ui.printButton}</span>
         </button>
 
         <button
@@ -226,7 +226,7 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
         >
           <Share2 className="w-4 h-4" />
-          <span>WhatsApp Par Bhejo</span>
+          <span>{currentLanguage.ui.whatsappButton}</span>
         </button>
 
         <button
@@ -234,7 +234,7 @@ export function ActionCard({ details, onSpeak, onReset }: ActionCardProps) {
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 shadow-sm transition-all"
         >
           <RotateCcw className="w-4 h-4 text-amber-800" />
-          <span>Nayi Yojana Dhoondho</span>
+          <span>{currentLanguage.ui.newConsultation}</span>
         </button>
       </div>
     </div>

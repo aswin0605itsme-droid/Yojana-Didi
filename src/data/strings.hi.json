@@ -1,0 +1,20 @@
+{
+  "appName": "VANI",
+  "sisterName": "वाणी दीदी",
+  "welcomeGreeting": "नमस्ते! मैं वाणी दीदी हूँ। सरकारी योजनाओं के लिए माइक दबाएँ या नीचे टाइप करें।",
+  "welcomeGreetingEnglish": "Hello! I am VANI Didi. Tap the mic to speak, or type below.",
+  "orType": "या टाइप करें",
+  "typePlaceholder": "यहाँ टाइप करें...",
+  "nudge1": "बोलने के लिए माइक दबाएँ, या नीचे लिख सकते हैं।",
+  "nudge1English": "Tap the mic to speak, or write below.",
+  "nudge2": "मैं आपकी मदद के लिए तैयार हूँ। बस एक शब्द कहें।",
+  "nudge2English": "I am ready to help you. Just ask anything.",
+  "micPermissionNotice": "एक बॉक्स दिखाई देगा, कृपया 'Allow' दबाएँ।",
+  "micPermissionEnglish": "A box will appear, please tap 'Allow'.",
+  "micUnavailable": "माइक उपलब्ध नहीं है, कृपया नीचे टाइप करें।",
+  "micUnavailableEnglish": "Microphone unavailable, please type below.",
+  "hearAgain": "दोबारा सुनें",
+  "listening": "सुन रही हूँ... बोलिए",
+  "thinking": "सोच रही हूँ...",
+  "send": "भेजें"
+}

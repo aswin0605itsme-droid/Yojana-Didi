@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Yojana Didi | योजना दीदी - Sarkari Sahayata Ki Saral Sathi",
-  description: "An empathetic, voice-first AI assistant helping rural Indian women discover and access government schemes with zero jargon.",
+  title: "VANI | Voice Assistant for Nari Initiatives",
+  description: "An empathetic, multilingual voice assistant helping rural Indian women access government schemes with zero jargon in Tanglish, English, Tamil, Telugu, Hindi, and more.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

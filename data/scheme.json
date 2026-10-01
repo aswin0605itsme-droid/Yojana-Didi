@@ -1,0 +1,324 @@
+{
+  "schemes": [
+    {
+      "id": "mudra_shishu",
+      "name": {
+        "en": "PM MUDRA Loan",
+        "ta": "பிரதமர் முத்ரா கடன் திட்டம்",
+        "hi": "पीएम मुद्रा योजना"
+      },
+      "tagline": {
+        "en": "Support up to ₹50,000 without risking your house.",
+        "ta": "சொத்து அடமானம் இன்றி ₹50,000 வரை அரசு உதவி.",
+        "hi": "बिना कुछ गिरवी रखे ₹50,000 तक की सहायता।"
+      },
+      "eligible": true,
+      "official_website": "https://www.mudra.org.in/",
+      "map_query": "State Bank of India branch",
+      "steps": [
+        {
+          "icon": "documents",
+          "title": { "en": "Documents", "ta": "ஆவணங்கள்", "hi": "दस्तावेज़" },
+          "speech": {
+            "en": "Bring your Aadhaar card, bank passbook, and two passport photos.",
+            "ta": "ஆதார் அட்டை, வங்கி பாஸ்புக் மற்றும் இரண்டு புகைப்படங்களை எடுத்துச் செல்லுங்கள்.",
+            "hi": "आधार कार्ड, बैंक पासबुक और दो फोटो साथ ले जाएं।"
+          },
+          "detail": {
+            "en": "Aadhaar Card, Bank Passbook, 2 Photos",
+            "ta": "ஆதார் அட்டை, வங்கி பாஸ்புக், 2 போட்டோக்கள்",
+            "hi": "आधार कार्ड, बैंक पासबुक, 2 फोटो"
+          }
+        },
+        {
+          "icon": "location",
+          "title": { "en": "Where to Go", "ta": "செல்ல வேண்டிய இடம்", "hi": "கहाँ जाएं" },
+          "speech": {
+            "en": "Go to your nearest government bank branch on a weekday morning.",
+            "ta": "அருகிலுள்ள அரசு வங்கி கிளைக்கு வேலை நாட்களில் காலையில் செல்லுங்கள்.",
+            "hi": "कामकाजी दिन सुबह अपनी नजदीकी सरकारी बैंक शाखा में जाएं।"
+          },
+          "detail": {
+            "en": "Nearest Public Sector Bank (SBI, Indian Bank)",
+            "ta": "அருகிலுள்ள அரசு வங்கி (SBI, Indian Bank)",
+            "hi": "निकटतम सरकारी बैंक (SBI, Indian Bank)"
+          }
+        },
+        {
+          "icon": "speech",
+          "title": { "en": "What to Say", "ta": "என்ன பேச வேண்டும்", "hi": "क्या बोलें" },
+          "speech": {
+            "en": "Tell the officer: I want a Mudra Shishu loan form for my work.",
+            "ta": "அதிகாரியிடம் கூறுங்கள்: தொழில் தொடங்க முத்ரா சிசு கடன் படிவம் வேண்டும்.",
+            "hi": "अधिकारी से कहें: मुझे काम शुरू करने के लिए मुद्रा शिशु फॉर्म चाहिए।"
+          },
+          "detail": {
+            "en": "“I want a Mudra Shishu loan form to start my business.”",
+            "ta": "“தொழில் தொடங்க முத்ரா சிசு கடன் படிவம் வேண்டும்.”",
+            "hi": "“मुझे काम शुरू करने के लिए मुद्रा शिशु फॉर्म चाहिए।”"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lakhpati_didi",
+      "name": {
+        "en": "Lakhpati Didi Scheme",
+        "ta": "லக்பதி தீதி திட்டம்",
+        "hi": "लखपति दीदी योजना"
+      },
+      "tagline": {
+        "en": "Financial training and support for women in self-help groups.",
+        "ta": "மகளிர் சுய உதவிக் குழு உறுப்பினர்களுக்கான தொழில் நிதி உதவி.",
+        "hi": "महिला स्वयं सहायता समूह सदस्यों के लिए विशेष सहायता।"
+      },
+      "eligible": true,
+      "official_website": "https://nrlm.gov.in/",
+      "map_query": "Gram Panchayat Office",
+      "steps": [
+        {
+          "icon": "documents",
+          "title": { "en": "Documents", "ta": "ஆவணங்கள்", "hi": "दस्तावेज़" },
+          "speech": {
+            "en": "Bring your Aadhaar card and Self-Help Group membership passbook.",
+            "ta": "ஆதார் அட்டை மற்றும் மகளிர் குழு பாஸ்புக்கை எடுத்துச் செல்லுங்கள்.",
+            "hi": "आधार कार्ड और महिला समूह की पासबुक साथ ले जाएं।"
+          },
+          "detail": {
+            "en": "Aadhaar Card, SHG Membership Passbook",
+            "ta": "ஆதார் அட்டை, மகளிர் குழு பாஸ்புக்",
+            "hi": "आधार कार्ड, महिला समूह पासबुक"
+          }
+        },
+        {
+          "icon": "location",
+          "title": { "en": "Where to Go", "ta": "செல்ல வேண்டிய இடம்", "hi": "कहाँ जाएं" },
+          "speech": {
+            "en": "Visit your village Panchayat office or Block Development Office.",
+            "ta": "உங்கள் கிராம பஞ்சாயத்து அல்லது வட்டார வளர்ச்சி அலுவலகத்திற்கு செல்லுங்கள்.",
+            "hi": "अपनी ग्राम पंचायत या ब्लॉक विकास कार्यालय में जाएं।"
+          },
+          "detail": {
+            "en": "Gram Panchayat or Block Office (BDO)",
+            "ta": "கிராம பஞ்சாயத்து அல்லது பி.டி.ஓ அலுவலகம்",
+            "hi": "ग्राम पंचायत या ब्लॉक कार्यालय"
+          }
+        },
+        {
+          "icon": "speech",
+          "title": { "en": "What to Say", "ta": "என்ன பேச வேண்டும்", "hi": "क्या बोलें" },
+          "speech": {
+            "en": "Tell them: I want training and support under Lakhpati Didi.",
+            "ta": "அவர்களிடம் கூறுங்கள்: லக்பதி தீதி திட்டத்தில் பயிற்சி மற்றும் உதவி வேண்டும்.",
+            "hi": "उनसे कहें: मुझे लखपति दीदी योजना के तहत सहायता चाहिए।"
+          },
+          "detail": {
+            "en": "“I want business training and support under Lakhpati Didi.”",
+            "ta": "“லக்பதி தீதி திட்டத்தில் பயிற்சி மற்றும் உதவி வேண்டும்.”",
+            "hi": "“मुझे लखपति दीदी योजना के तहत सहायता चाहिए।”"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pm_svanidhi",
+      "name": {
+        "en": "PM SVANidhi Scheme",
+        "ta": "பிஎம் ஸ்வநிதி திட்டம்",
+        "hi": "पीएम स्वनिधि योजना"
+      },
+      "tagline": {
+        "en": "Instant working capital of ₹10,000 for vendors and small shops.",
+        "ta": "சிறு வியாபாரிகளுக்கு ₹10,000 உடனடி மூலதன உதவி.",
+        "hi": "छोटे दुकानदारों और रेहड़ी वालों के लिए ₹10,000 की सहायता।"
+      },
+      "eligible": true,
+      "official_website": "https://pmsvanidhi.mohua.gov.in/",
+      "map_query": "Common Service Center CSC",
+      "steps": [
+        {
+          "icon": "documents",
+          "title": { "en": "Documents", "ta": "ஆவணங்கள்", "hi": "दस्तावेज़" },
+          "speech": {
+            "en": "Bring your Aadhaar card and phone linked to your bank.",
+            "ta": "ஆதார் அட்டை மற்றும் வங்கிக் கணக்கு உள்ள மொபைலை எடுத்துச் செல்லுங்கள்.",
+            "hi": "आधार कार्ड और बैंक से जुड़ा मोबाइल फोन साथ ले जाएं।"
+          },
+          "detail": {
+            "en": "Aadhaar Card, Bank Passbook, Phone",
+            "ta": "ஆதார் அட்டை, வங்கி பாஸ்புக், மொபைல்",
+            "hi": "आधार कार्ड, बैंक पासबुक, मोबाइल"
+          }
+        },
+        {
+          "icon": "location",
+          "title": { "en": "Where to Go", "ta": "செல்ல வேண்டிய இடம்", "hi": "कहाँ जाएं" },
+          "speech": {
+            "en": "Visit your nearest Common Service Center or digital service point.",
+            "ta": "அருகிலுள்ள அரசு இ-சேவை மையத்திற்கு செல்லுங்கள்.",
+            "hi": "अपने नजदीकी कॉमन सर्विस सेंटर या सीएससी जाएं।"
+          },
+          "detail": {
+            "en": "Common Service Center (CSC / e-Sevai)",
+            "ta": "இ-சேவை மையம் (CSC / e-Sevai மையங்கள்)",
+            "hi": "कॉमन सर्विस सेंटर (CSC केंद्र)"
+          }
+        },
+        {
+          "icon": "speech",
+          "title": { "en": "What to Say", "ta": "என்ன பேச வேண்டும்", "hi": "क्या बोलें" },
+          "speech": {
+            "en": "Tell them: Please apply for PM SVANidhi vendor loan for me.",
+            "ta": "அவர்களிடம் கூறுங்கள்: எனக்கு பிஎம் ஸ்வநிதி திட்டத்தில் விண்ணப்பிக்கவும்.",
+            "hi": "उनसे कहें: मुझे पीएम स्वनिधि योजना के लिए आवेदन करना है।"
+          },
+          "detail": {
+            "en": "“Please submit my application for PM SVANidhi vendor scheme.”",
+            "ta": "“எனக்கு பிஎம் ஸ்வநிதி திட்டத்தில் விண்ணப்பிக்க வேண்டும்.”",
+            "hi": "“मुझे पीएम स्वनिधि योजना में आवेदन करना है।”"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pashudhan_kcc",
+      "name": {
+        "en": "Dairy & Livestock Loan (KCC)",
+        "ta": "பால்பண்ணை & கால்நடை கடன்",
+        "hi": "पशुधन एवं डेयरी लोन (केसीसी)"
+      },
+      "tagline": {
+        "en": "Support to buy cows, buffaloes, or goats without collateral.",
+        "ta": "பசு அல்லது ஆடு வாங்க அடமானம் இல்லாத அரசு உதவி.",
+        "hi": "गाय, भैंस या बकरी खरीदने के लिए बिना गिरवी सहायता।"
+      },
+      "eligible": true,
+      "official_website": "https://dahd.nic.in/",
+      "map_query": "Veterinary hospital",
+      "steps": [
+        {
+          "icon": "documents",
+          "title": { "en": "Documents", "ta": "ஆவணங்கள்", "hi": "दस्तावेज़" },
+          "speech": {
+            "en": "Bring your Aadhaar card, bank passbook, and village residence proof.",
+            "ta": "ஆதார் அட்டை, வங்கி பாஸ்புக் மற்றும் கிராம முகவரி சான்று கொண்டு செல்லுங்கள்.",
+            "hi": "आधार कार्ड, बैंक पासबुक और गांव के पते का प्रमाण साथ ले जाएं।"
+          },
+          "detail": {
+            "en": "Aadhaar Card, Bank Passbook, Residence Proof",
+            "ta": "ஆதார் அட்டை, வங்கி பாஸ்புக், இருப்பிடச் சான்று",
+            "hi": "आधार कार्ड, बैंक पासबुक, निवास प्रमाण"
+          }
+        },
+        {
+          "icon": "location",
+          "title": { "en": "Where to Go", "ta": "செல்ல வேண்டிய இடம்", "hi": "कहाँ जाएं" },
+          "speech": {
+            "en": "Visit your local Gramin Bank or Veterinary Hospital.",
+            "ta": "உங்கள் பகுதி கிராம வங்கி அல்லது கால்நடை மருத்துவமனைக்கு செல்லுங்கள்.",
+            "hi": "अपने क्षेत्रीय ग्रामीण बैंक या पशु चिकित्सालय में जाएं।"
+          },
+          "detail": {
+            "en": "Nearest Gramin Bank or Veterinary Center",
+            "ta": "அருகிலுள்ள கிராம வங்கி அல்லது கால்நடை மையம்",
+            "hi": "निकटतम ग्रामीण बैंक या पशु चिकित्सा केंद्र"
+          }
+        },
+        {
+          "icon": "speech",
+          "title": { "en": "What to Say", "ta": "என்ன பேச வேண்டும்", "hi": "क्या बोलें" },
+          "speech": {
+            "en": "Tell them: I want an Animal Husbandry loan form to buy cattle.",
+            "ta": "அவர்களிடம் கூறுங்கள்: கால்நடை வாங்க அரசு கடன் படிவம் வேண்டும்.",
+            "hi": "उनसे कहें: पशु खरीदने के लिए पशुपालन लोन का फॉर्म चाहिए।"
+          },
+          "detail": {
+            "en": "“I want an Animal Husbandry loan form to purchase livestock.”",
+            "ta": "“கால்நடை வாங்க எனக்கு அரசு கடன் படிவம் வேண்டும்.”",
+            "hi": "“पशु खरीदने के लिए मुझे पशुपालन लोन फॉर्म चाहिए।”"
+          }
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "q_work",
+      "speech": {
+        "en": "What work would you like to do?",
+        "ta": "நீங்கள் என்ன தொழில் செய்ய விரும்புகிறீர்கள்?",
+        "hi": "आप कौन सा काम करना चाहती हैं?"
+      },
+      "options": [
+        {
+          "id": "tailoring",
+          "label": { "en": "Tailoring & Sewing", "ta": "தையல் தொழில்", "hi": "सिलाई काम" },
+          "icon": "scissors",
+          "keywords": ["tailor", "tailoring", "silai", "machine", "தையல்", "தையற்கலை", "cloth", "dress", "sewing"]
+        },
+        {
+          "id": "dairy",
+          "label": { "en": "Dairy & Cattle", "ta": "பால் பண்ணை", "hi": "डेयरी व पशुपालन" },
+          "icon": "cow",
+          "keywords": ["dairy", "cow", "buffalo", "milk", "cattle", "பால்", "மாடு", "ஆடு", "பண்ணை", "doodh", "gai", "bhains"]
+        },
+        {
+          "id": "vendor",
+          "label": { "en": "Small Shop or Cart", "ta": "சிறு கடை / தள்ளுவண்டி", "hi": "छोटी दुकान या ठेला" },
+          "icon": "cart",
+          "keywords": ["shop", "cart", "vendor", "vegetable", "fruit", "store", "thela", "dukan", "கடை", "வியாபாரம்", "தள்ளுவண்டி"]
+        },
+        {
+          "id": "other",
+          "label": { "en": "Other Work", "ta": "பிற வேலை", "hi": "अन्य काम" },
+          "icon": "briefcase",
+          "keywords": ["other", "business", "handicraft", "farming", "தொழில்", "வேலை", "kaam", "kheti"]
+        }
+      ]
+    },
+    {
+      "id": "q_shg",
+      "speech": {
+        "en": "Are you a member of any women's self-help group?",
+        "ta": "நீங்கள் மகளிர் சுய உதவிக் குழுவில் உறுப்பினரா?",
+        "hi": "क्या आप महिला स्वयं सहायता समूह में हैं?"
+      },
+      "options": [
+        {
+          "id": "yes",
+          "label": { "en": "Yes, in group", "ta": "ஆம், குழுவில் உள்ளேன்", "hi": "हाँ, समूह में हूँ" },
+          "icon": "users",
+          "keywords": ["yes", "aama", "aam", "haan", "group", "shg", "samooh", "gat", "உள்ளேன்", "ஆம்"]
+        },
+        {
+          "id": "no",
+          "label": { "en": "No, on my own", "ta": "இல்லை, தனியாக", "hi": "नहीं, अकेले" },
+          "icon": "user",
+          "keywords": ["no", "illai", "nahi", "alone", "own", "தனியாக", "இல்லை", "akele"]
+        }
+      ]
+    },
+    {
+      "id": "q_amount",
+      "speech": {
+        "en": "Do you need under fifty thousand rupees to start?",
+        "ta": "தொழில் தொடங்க ஐம்பதாயிரம் ரூபாய்க்குள் போதுமா?",
+        "hi": "क्या आपको पचास हज़ार रुपये के अंदर सहायता चाहिए?"
+      },
+      "options": [
+        {
+          "id": "yes",
+          "label": { "en": "Yes, under ₹50,000", "ta": "ஆம், ₹50,000-க்குள்", "hi": "हाँ, ₹50,000 तक" },
+          "icon": "coins",
+          "keywords": ["yes", "aama", "haan", "under", "50000", "kam", "போதுமானது", "ஆம்", "50"]
+        },
+        {
+          "id": "no",
+          "label": { "en": "No, more than ₹50,000", "ta": "இல்லை, அதற்கு மேல்", "hi": "नहीं, उससे ज़्यादा" },
+          "icon": "banknote",
+          "keywords": ["no", "illai", "nahi", "more", "higher", "lakh", "அதிகம்", "இல்லை", "zyada"]
+        }
+      ]
+    }
+  ]
+}

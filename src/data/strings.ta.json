@@ -1,0 +1,20 @@
+{
+  "appName": "VANI",
+  "sisterName": "வாணி அக்கா",
+  "welcomeGreeting": "வணக்கம்! நான் வாணி அக்கா. அரசு திட்டங்களை அறிய மைக்கைத் தொட்டு பேசலாம் அல்லது தட்டச்சு செய்யலாம்.",
+  "welcomeGreetingEnglish": "Hello! I am VANI Akka. Tap the microphone to speak, or type in the box.",
+  "orType": "அல்லது தட்டச்சு செய்க",
+  "typePlaceholder": "இங்கு தட்டச்சு செய்யவும்...",
+  "nudge1": "பேச பெரிய மைக்கை தொடவும், அல்லது கீழே எழுதலாம்.",
+  "nudge1English": "Tap the big mic to speak, or write below.",
+  "nudge2": "உங்களுக்கு உதவ நான் தயாராக உள்ளேன். தயங்காமல் கேளுங்கள்.",
+  "nudge2English": "I am here to help you. Feel free to ask.",
+  "micPermissionNotice": "ஒரு அனுமதிப் பெட்டி தோன்றும். தயவுசெய்து 'Allow' பொத்தானைத் தொடவும்.",
+  "micPermissionEnglish": "A permission box will appear. Please tap 'Allow'.",
+  "micUnavailable": "மைக் கிடைக்கவில்லை. தயவுசெய்து கீழே உள்ள பெட்டியில் தட்டச்சு செய்க.",
+  "micUnavailableEnglish": "Microphone unavailable. Please type your message in the box below.",
+  "hearAgain": "மீண்டும் கேள்",
+  "listening": "கேட்கிறேன்... பேசுங்கள்",
+  "thinking": "யோசிக்கிறேன்...",
+  "send": "அனுப்புக"
+}

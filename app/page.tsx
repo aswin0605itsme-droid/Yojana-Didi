@@ -1,181 +1,512 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Header } from "./components/Header";
-import { DidiAvatar } from "./components/DidiAvatar";
-import { InterviewChat } from "./components/InterviewChat";
-import { ActionCard } from "./components/ActionCard";
+import React, { useState, useRef, useCallback } from "react";
+import { QuickExitBar } from "./components/QuickExitBar";
+import { VaniFrontPage } from "./components/VaniFrontPage";
+import { SingleQuestionView } from "./components/SingleQuestionView";
+import { OmnipotentAIView } from "./components/OmnipotentAIView";
 import { useVoice } from "./hooks/useVoice";
-import { ChatMessage, YojanaDidiResponse, ActionCardDetails } from "./types";
-
-const INITIAL_GREETING =
-  "Namaste Behen! Main aapki Yojana Didi hoon. Aapko sarkari sahayata paane mein bilkul pareshan nahi hona padega. Mujhe bas itna bataiye, kya aap apna koi naya kaam shuru karna chahti hain jaise silai ya dairy, ya fir aapko kheti ke kaam mein sahayata chahiye?";
+import { playAudioBeep } from "./lib/audioCue";
+import { SUPPORTED_LANGUAGES, detectLanguageFromText } from "./lib/languages";
+import {
+  THREE_PERSONALIZATION_QUESTIONS,
+  matchSchemeFromThreeAnswers
+} from "./lib/consultationQuestions";
 
 export default function Home() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [turnCount, setTurnCount] = useState<number>(1);
-  const [uiMode, setUiMode] = useState<"interview" | "action_card">("interview");
-  const [actionCardDetails, setActionCardDetails] = useState<ActionCardDetails | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [hasStarted, setHasStarted] = useState<boolean>(false);
+  // Always start on the front page when opening website
+  const [stage, setStage] = useState<"front" | "questions" | "result">("front");
+  const [lang, setLang] = useState<string>("ta"); // Default to Tamil, all 9 languages supported
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [isReadingPage, setIsReadingPage] = useState(false);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const [lastSpokenQuery, setLastSpokenQuery] = useState("");
 
-  // Send message handler
-  const handleSendMessage = useCallback(
-    async (text: string) => {
-      if (!text.trim() || isLoading) return;
+  // Cancellation ref for sequential text-highlight reading
+  const readingActiveRef = useRef(false);
 
-      const userMsg: ChatMessage = {
-        id: `user-${Date.now()}`,
-        role: "user",
-        text: text.trim(),
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      };
+  // Confirmation state
+  const [isConfirmedPending, setIsConfirmedPending] = useState(false);
+  const [pendingOptionId, setPendingOptionId] = useState<string | null>(null);
+  const [pendingAnswerText, setPendingAnswerText] = useState("");
 
-      setMessages((prev) => [...prev, userMsg]);
-      setIsLoading(true);
+  // Silence timer state
+  const [silenceMissCount, setSilenceMissCount] = useState(0);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-      const nextTurn = turnCount + 1;
-      setTurnCount(nextTurn);
+  // Matched scheme
+  const [selectedScheme, setSelectedScheme] = useState<any>(null);
 
-      try {
-        // Build history for backend
-        const history = messages.map((m) => ({
-          role: m.role,
-          content: m.text
-        }));
+  const currentQuestion = THREE_PERSONALIZATION_QUESTIONS[currentQuestionIndex];
+  const totalQuestions = 3;
+  const langConfig = SUPPORTED_LANGUAGES[lang] || SUPPORTED_LANGUAGES["ta"] || SUPPORTED_LANGUAGES["en"];
+  const speechLangCode = langConfig.speechLang || "ta-IN";
 
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text,
-            history,
-            turnCount: nextTurn
-          })
-        });
-
-        const data: YojanaDidiResponse = await res.json();
-
-        const assistantMsg: ChatMessage = {
-          id: `didi-${Date.now()}`,
-          role: "assistant",
-          text: data.spoken_response,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          actionCard: data.ui_mode === "action_card" ? data.action_card_details : null
-        };
-
-        setMessages((prev) => [...prev, assistantMsg]);
-
-        // If action card is ready
-        if (data.ui_mode === "action_card" && data.action_card_details?.scheme_name) {
-          setUiMode("action_card");
-          setActionCardDetails(data.action_card_details);
-        }
-
-        // Speak Didi's response aloud
-        voice.speak(data.spoken_response);
-      } catch (err) {
-        console.error("Chat error:", err);
-        const errorMsg: ChatMessage = {
-          id: `didi-${Date.now()}`,
-          role: "assistant",
-          text: "Maaf kijiye behen, main theek se sun nahi paayi. Kya aap dobara bol sakti hain?",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        };
-        setMessages((prev) => [...prev, errorMsg]);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [messages, turnCount, isLoading]
-  );
-
-  // Initialize Voice hook with callback
+  // Voice controller hook with Web Audio hardware playback
   const voice = useVoice({
+    lang: speechLangCode,
     onSpeechResult: (transcript) => {
-      if (transcript.trim()) {
-        handleSendMessage(transcript.trim());
-      }
+      handleUserSpokenAnswer(transcript);
     }
   });
 
-  // Mount initial greeting
-  useEffect(() => {
-    if (!hasStarted) {
-      setHasStarted(true);
-      const initialMsg: ChatMessage = {
-        id: "initial-didi-msg",
-        role: "assistant",
-        text: INITIAL_GREETING,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      };
-      setMessages([initialMsg]);
+  // Clear silence timer
+  const clearSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
     }
-  }, [hasStarted]);
+  }, []);
 
-  // Reset conversation
-  const handleReset = () => {
-    voice.stopSpeaking();
-    voice.stopListening();
-    setUiMode("interview");
-    setActionCardDetails(null);
-    setTurnCount(1);
-    const initialMsg: ChatMessage = {
-      id: `initial-didi-${Date.now()}`,
-      role: "assistant",
-      text: INITIAL_GREETING,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    };
-    setMessages([initialMsg]);
-    voice.speak(INITIAL_GREETING);
+  // Start 6-second silence timer
+  const startSilenceTimer = useCallback(() => {
+    clearSilenceTimer();
+    silenceTimerRef.current = setTimeout(() => {
+      handleSilenceTimeout();
+    }, 6000);
+  }, [clearSilenceTimer]);
+
+  // Repeat gently on silence
+  const handleSilenceTimeout = useCallback(() => {
+    if (stage !== "questions" || isConfirmedPending || !currentQuestion) return;
+
+    setSilenceMissCount((prev) => {
+      const nextMiss = prev + 1;
+      const qSpeech = (currentQuestion.speech as any)[lang] || currentQuestion.speech.en || currentQuestion.speech.ta;
+
+      voice.speak(
+        qSpeech,
+        () => {
+          if (nextMiss < 2 && !voice.isMicDenied) {
+            voice.startListening();
+            startSilenceTimer();
+          }
+        },
+        speechLangCode
+      );
+
+      return nextMiss;
+    });
+  }, [stage, isConfirmedPending, currentQuestion, lang, voice, speechLangCode, startSilenceTimer]);
+
+  // Sequential text-highlight reader: Highlights each element in real-time as it is spoken
+  const readSequence = async (items: { key: string; text: string }[]) => {
+    readingActiveRef.current = true;
+    setIsReadingPage(true);
+
+    for (const item of items) {
+      if (!readingActiveRef.current) break;
+      setHighlightedKey(item.key);
+
+      await new Promise<void>((resolve) => {
+        voice.speak(item.text, () => resolve(), speechLangCode);
+      });
+    }
+
+    setHighlightedKey(null);
+    setIsReadingPage(false);
+    readingActiveRef.current = false;
   };
+
+  // Stop reading and clear highlights
+  const stopReadingOutLoud = () => {
+    readingActiveRef.current = false;
+    voice.stopSpeaking();
+    setHighlightedKey(null);
+    setIsReadingPage(false);
+  };
+
+  // Read Page Out Loud with text highlighting
+  const handleReadPageOutLoud = () => {
+    voice.unlockAudioContext();
+
+    if (voice.isSpeaking || isReadingPage) {
+      stopReadingOutLoud();
+      return;
+    }
+
+    if (stage === "questions" && currentQuestion) {
+      const qTitle =
+        (currentQuestion.speech as any)[lang] ||
+        (currentQuestion.title as any)[lang] ||
+        currentQuestion.speech.en ||
+        currentQuestion.speech.ta;
+
+      const items: { key: string; text: string }[] = [
+        {
+          key: "title",
+          text: `${lang === "ta" ? "கேள்வி" : lang === "hi" ? "सवाल" : "Question"} ${
+            currentQuestionIndex + 1
+          }. ${qTitle}`
+        }
+      ];
+
+      currentQuestion.options.forEach((opt, idx) => {
+        const label =
+          (opt.label as any)[lang] || opt.label.en || (opt.label as any).ta || "";
+        items.push({
+          key: `opt-${idx}`,
+          text: label
+        });
+      });
+
+      items.push({
+        key: "speak",
+        text:
+          lang === "ta"
+            ? "அல்லது பேசி பதிலளிக்க மைக்ரோஃபோனைத் தொடவும்."
+            : lang === "hi"
+            ? "या बोलकर उत्तर देने के लिए माइक दबाएँ।"
+            : "Or tap the speak button to say your answer."
+      });
+
+      readSequence(items);
+    } else if (stage === "result") {
+      const greet =
+        lang === "ta"
+          ? "வாணி ஜெமினி உதவியாளர். இணையதள முகவரி, அருகிலுள்ள இடங்கள், அல்லது ஏதேனும் சந்தேகங்களை கேட்கலாம்."
+          : "VANI Gemini Assistant. Ask for website links, nearby locations, or any doubts.";
+      readSequence([{ key: "omni", text: greet }]);
+    }
+  };
+
+  // Start 3-Question Consultation from Front Page
+  const handleStartConsultation = () => {
+    stopReadingOutLoud();
+    voice.unlockAudioContext();
+    playAudioBeep("chime");
+    setStage("questions");
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setIsConfirmedPending(false);
+
+    const q1 = THREE_PERSONALIZATION_QUESTIONS[0];
+    const q1Speech = (q1.speech as any)[lang] || q1.speech.en || q1.speech.ta;
+
+    voice.speak(
+      q1Speech,
+      () => {
+        voice.startListening();
+        startSilenceTimer();
+      },
+      speechLangCode
+    );
+  };
+
+  // Handle user speech across all stages
+  const handleUserSpokenAnswer = (transcript: string) => {
+    clearSilenceTimer();
+
+    // If on front page, user speaks -> detect language & start
+    if (stage === "front") {
+      const detected = detectLanguageFromText(transcript);
+      if (detected && detected !== lang) {
+        setLang(detected);
+      }
+      handleStartConsultation();
+      return;
+    }
+
+    // If on result page (Omnipotent AI), route query directly to AI view
+    if (stage === "result") {
+      setLastSpokenQuery(transcript);
+      return;
+    }
+
+    // If confirming Yes / No in questions
+    if (isConfirmedPending) {
+      const isYes = /\b(yes|yeah|ok|aama|aam|sari|haan|हाँ|ஆம்|சரி|అவுను|ಹೌದು)\b/i.test(transcript);
+      const isNo = /\b(no|not|illai|ila|nahi|नहीं|இல்லை|లేదు|ಇಲ್ಲ)\b/i.test(transcript);
+
+      if (isYes) {
+        playAudioBeep("chime");
+        handleConfirmAnswer(true);
+        return;
+      }
+      if (isNo) {
+        handleConfirmAnswer(false);
+        return;
+      }
+    }
+
+    if (!currentQuestion) return;
+
+    // Match spoken answer against current question's options (including none_other)
+    const cleanSpeech = transcript.toLowerCase();
+    const matchedOption = currentQuestion.options.find(
+      (opt) =>
+        opt.keywords.some((kw) => cleanSpeech.includes(kw.toLowerCase())) ||
+        ((opt.label as any)[lang] || "").toLowerCase().includes(cleanSpeech) ||
+        (opt.label.en || "").toLowerCase().includes(cleanSpeech)
+    );
+
+    if (matchedOption) {
+      playAudioBeep("chime");
+      const label =
+        (matchedOption.label as any)[lang] || matchedOption.label.en || (matchedOption.label as any).ta;
+      setPendingOptionId(matchedOption.id);
+      setPendingAnswerText(label);
+      setIsConfirmedPending(true);
+
+      const confirmSpeech =
+        lang === "ta"
+          ? `நீங்கள் ${label} தேர்வு செய்துள்ளீர்கள், இது சரியா?`
+          : lang === "hi"
+          ? `आपने ${label} चुना है, क्या यह सही है?`
+          : `You chose ${label}, is that right?`;
+
+      voice.speak(
+        confirmSpeech,
+        () => {
+          voice.startListening();
+        },
+        speechLangCode
+      );
+    } else {
+      const retrySpeech =
+        lang === "ta"
+          ? "தயவுசெய்து உங்கள் பதிலை மீண்டும் கூறவும் அல்லது படத்தைத் தொடவும்."
+          : lang === "hi"
+          ? "कृपया दोबारा बोलें या चित्र पर टच करें।"
+          : "Please say your answer again or tap an icon.";
+
+      voice.speak(
+        retrySpeech,
+        () => {
+          voice.startListening();
+          startSilenceTimer();
+        },
+        speechLangCode
+      );
+    }
+  };
+
+  // Select an option directly via pictorial card tap
+  const handleSelectOptionDirectly = (optionId: string) => {
+    stopReadingOutLoud();
+    clearSilenceTimer();
+    playAudioBeep("chime");
+    voice.unlockAudioContext();
+    if (!currentQuestion) return;
+
+    const opt = currentQuestion.options.find((o) => o.id === optionId);
+    const label = opt ? ((opt.label as any)[lang] || opt.label.en || (opt.label as any).ta) : optionId;
+
+    setPendingOptionId(optionId);
+    setPendingAnswerText(label);
+    setIsConfirmedPending(true);
+
+    const confirmSpeech =
+      lang === "ta"
+        ? `நீங்கள் ${label} தேர்வு செய்துள்ளீர்கள், இது சரியா?`
+        : lang === "hi"
+        ? `आपने ${label} चुना है, क्या यह सही है?`
+        : `You chose ${label}, is that right?`;
+
+    voice.speak(confirmSpeech, undefined, speechLangCode);
+  };
+
+  // Confirm or reject selected option
+  const handleConfirmAnswer = (confirmed: boolean) => {
+    stopReadingOutLoud();
+    clearSilenceTimer();
+    voice.unlockAudioContext();
+
+    if (!confirmed) {
+      setIsConfirmedPending(false);
+      setPendingOptionId(null);
+      setPendingAnswerText("");
+      if (!currentQuestion) return;
+      const qSpeech = (currentQuestion.speech as any)[lang] || currentQuestion.speech.en || currentQuestion.speech.ta;
+      voice.speak(
+        qSpeech,
+        () => {
+          voice.startListening();
+          startSilenceTimer();
+        },
+        speechLangCode
+      );
+      return;
+    }
+
+    const updatedAnswers = {
+      ...answers,
+      [currentQuestion.id]: pendingOptionId!
+    };
+    setAnswers(updatedAnswers);
+    setIsConfirmedPending(false);
+    setPendingOptionId(null);
+    setPendingAnswerText("");
+    setSilenceMissCount(0);
+
+    const nextIndex = currentQuestionIndex + 1;
+
+    // Check if next personalization question exists (Question 1, 2, 3)
+    if (nextIndex < THREE_PERSONALIZATION_QUESTIONS.length) {
+      setCurrentQuestionIndex(nextIndex);
+      const nextQ = THREE_PERSONALIZATION_QUESTIONS[nextIndex];
+      const nextSpeech = (nextQ.speech as any)[lang] || nextQ.speech.en || nextQ.speech.ta;
+
+      voice.speak(
+        nextSpeech,
+        () => {
+          voice.startListening();
+          startSilenceTimer();
+        },
+        speechLangCode
+      );
+    } else {
+      // Step 4: THE LAST PAGE (Strictly ONLY the Omnipotent AI Assistant)
+      playAudioBeep("chime");
+      const matched = matchSchemeFromThreeAnswers(updatedAnswers);
+      setSelectedScheme(matched);
+      setStage("result");
+    }
+  };
+
+  // Repeat current question
+  const handleRepeatQuestion = () => {
+    stopReadingOutLoud();
+    clearSilenceTimer();
+    voice.unlockAudioContext();
+    if (!currentQuestion) return;
+    const qSpeech = (currentQuestion.speech as any)[lang] || currentQuestion.speech.en || currentQuestion.speech.ta;
+    voice.speak(
+      qSpeech,
+      () => {
+        voice.startListening();
+        startSilenceTimer();
+      },
+      speechLangCode
+    );
+  };
+
+  // Start Over: Resets to Front Page
+  const handleStartAgain = () => {
+    stopReadingOutLoud();
+    clearSilenceTimer();
+    voice.unlockAudioContext();
+    setAnswers({});
+    setSelectedScheme(null);
+    setCurrentQuestionIndex(0);
+    setIsConfirmedPending(false);
+    setSilenceMissCount(0);
+    setLastSpokenQuery("");
+    setStage("front");
+  };
+
+  // Select language from all supported languages
+  const handleSelectLang = (newLangCode: string) => {
+    stopReadingOutLoud();
+    clearSilenceTimer();
+    voice.unlockAudioContext();
+    setLang(newLangCode);
+  };
+
+  // Handle interaction from the language-agnostic front page
+  const handleFrontPageInteraction = (detectedLang: string, initialQuery?: string) => {
+    stopReadingOutLoud();
+    voice.unlockAudioContext();
+    setLang(detectedLang);
+
+    if (initialQuery && initialQuery.trim()) {
+      setLastSpokenQuery(initialQuery);
+      setStage("result");
+    } else {
+      handleStartConsultation();
+    }
+  };
+
+  if (stage === "front") {
+    return (
+      <VaniFrontPage
+        onLanguageIdentifiedAndQuery={handleFrontPageInteraction}
+        onStartConsultation={handleStartConsultation}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-orange-50/40 to-amber-100/50 text-stone-900 flex flex-col font-sans selection:bg-amber-200">
-      {/* Top Header */}
-      <Header
-        isMuted={voice.isMuted}
-        onToggleMute={voice.toggleMute}
-        onReset={handleReset}
-        turnCount={turnCount}
+      {/* Top Navigation Bar: shown on questions and result screens */}
+      <QuickExitBar
+        lang={lang}
+        onSelectLang={handleSelectLang}
+        onStartAgain={handleStartAgain}
+        onReadPageOutLoud={handleReadPageOutLoud}
+        isReadingPage={isReadingPage || voice.isSpeaking}
+        isLoadingSpeech={voice.isLoadingSpeech}
+        showStartOver={true}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-3 flex flex-col justify-between">
-        {/* Animated Yojana Didi Avatar & Companion status */}
-        <section aria-label="Yojana Didi Companion" className="print:hidden">
-          <DidiAvatar
-            isSpeaking={voice.isSpeaking}
-            isListening={voice.isListening}
-            isLoading={isLoading}
-          />
-        </section>
+      {/* Main Screen Container */}
+      <main className="flex-1 max-w-xl w-full mx-auto p-4 flex flex-col justify-between">
 
-        {/* Dynamic Display: Interview Mode OR Action Card Mode */}
-        {uiMode === "action_card" && actionCardDetails ? (
-          <ActionCard
-            details={actionCardDetails}
-            onSpeak={(text) => voice.speak(text)}
-            onReset={handleReset}
-          />
-        ) : (
-          <InterviewChat
-            messages={messages}
-            turnCount={turnCount}
-            isLoading={isLoading}
+        {/* 2. THE 3 PERSONALIZATION QUESTIONS */}
+        {stage === "questions" && currentQuestion && (
+          <SingleQuestionView
+            question={currentQuestion}
+            questionIndex={currentQuestionIndex}
+            totalQuestions={totalQuestions}
+            lang={lang}
             isListening={voice.isListening}
+            isSpeaking={voice.isSpeaking}
             interimText={voice.interimText}
-            onSendMessage={handleSendMessage}
-            onStartListening={voice.startListening}
-            onStopListening={voice.stopListening}
-            onSpeakText={(text) => voice.speak(text)}
+            isConfirmedPending={isConfirmedPending}
+            pendingAnswerText={pendingAnswerText}
+            silenceMissCount={silenceMissCount}
+            isMicDenied={voice.isMicDenied}
+            highlightedKey={highlightedKey}
+            onConfirmAnswer={handleConfirmAnswer}
+            onSelectOptionDirectly={handleSelectOptionDirectly}
+            onRepeatQuestion={handleRepeatQuestion}
+            onStartListening={() => {
+              stopReadingOutLoud();
+              voice.unlockAudioContext();
+              voice.startListening();
+              startSilenceTimer();
+            }}
+            onStopListening={() => {
+              clearSilenceTimer();
+              voice.stopListening();
+            }}
           />
         )}
 
-        {/* Footer info note */}
-        <footer className="text-center py-2 text-[11px] text-amber-900/60 print:hidden">
-          Yojana Didi • AI Assistant for Rural Women • Built with Google Gemini
+        {/* 3. THE LAST PAGE: Strictly ONLY the Omnipotent AI Assistant (Image 2) */}
+        {stage === "result" && (
+          <OmnipotentAIView
+            userCondition={{
+              work: answers["q1_work"] || "tailoring",
+              setup: answers["q2_setup"] || "individual",
+              capital: answers["q3_capital"] || "under_50k"
+            }}
+            scheme={selectedScheme}
+            lang={lang}
+            isSpeaking={voice.isSpeaking}
+            isListening={voice.isListening}
+            interimText={voice.interimText}
+            lastSpokenQuery={lastSpokenQuery}
+            onSpeakText={(text) => {
+              stopReadingOutLoud();
+              voice.unlockAudioContext();
+              voice.speak(text, undefined, speechLangCode);
+            }}
+            onStartListening={() => {
+              stopReadingOutLoud();
+              voice.unlockAudioContext();
+              voice.startListening();
+            }}
+            onStopListening={() => {
+              voice.stopListening();
+            }}
+          />
+        )}
+
+        {/* Footer info: Privacy Notice (Only shown after front page) */}
+        <footer className="text-center py-2 text-[10px] text-stone-500 print:hidden">
+          Privacy Protected • State lives in memory only • No cookies or accounts
         </footer>
       </main>
     </div>

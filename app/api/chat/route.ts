@@ -2,19 +2,43 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { YOJANA_DIDI_SYSTEM_PROMPT, DIDI_RESPONSE_SCHEMA } from "@/app/lib/didiPrompt";
 import { simulateYojanaDidiResponse } from "@/app/lib/schemes";
+import { detectLanguageFromText } from "@/app/lib/languages";
 import { YojanaDidiResponse } from "@/app/types";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { message, history = [], turnCount = 1 } = body;
+    const { message, history = [], turnCount = 1, language = "hi" } = body;
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-    // If no API key configured or offline testing, use our realistic conversational simulator
+    // Detect language from user input or use selected language
+    const detectedLang = detectLanguageFromText(message) || language || "hi";
+
+    // Fast Omnipresent Intent Check (0ms latency for Locations, Websites, Portals)
+    const { parseOmniIntent } = await import("@/app/lib/omniHandler");
+    const omni = parseOmniIntent(message, detectedLang === "ta" ? "ta" : "en");
+    if (omni.type === "location" || omni.type === "website") {
+      return NextResponse.json({
+        spoken_response: omni.spokenText,
+        ui_mode: omni.type,
+        language: detectedLang,
+        map_query: omni.mapQuery || null,
+        website_url: omni.websiteUrl || null,
+        website_label: omni.websiteLabel || null,
+        action_card_details: {
+          scheme_name: omni.title,
+          documents_needed: ["Aadhaar Card", "Bank Passbook"],
+          where_to_go: omni.mapQuery || "",
+          what_to_say: "I am visiting for government scheme assistance."
+        }
+      });
+    }
+
+    // If no API key configured or offline testing, use our multilingual conversational simulator
     if (!apiKey) {
-      console.log(`[Yojana Didi] Running in Offline Simulator Mode (Turn ${turnCount})`);
-      const fallbackResponse = simulateYojanaDidiResponse(message, turnCount);
+      console.log(`[Yojana Didi] Running in Multilingual Simulator Mode (${detectedLang}, Turn ${turnCount})`);
+      const fallbackResponse = simulateYojanaDidiResponse(message, turnCount, detectedLang);
       return NextResponse.json(fallbackResponse);
     }
 
@@ -28,16 +52,18 @@ export async function POST(req: NextRequest) {
         parts: [{ text: turn.content }]
       }));
 
-      // Add user's latest message with turn count guidance
+      // Add user's latest message with turn count & multilingual guidance
       const promptWithTurn = `
 [System Context: This is Turn #${turnCount} of the interaction. 
-${turnCount >= 3 ? "CRITICAL DIRECTIVE: You have reached 3-4 questions. You MUST now stop asking questions and set ui_mode to 'action_card' with complete action_card_details." : "Ask exactly ONE simple question with no jargon."}]
+Selected or detected user language: ${detectedLang}.
+CRITICAL LANGUAGE DIRECTIVE: Detect the user's language and respond naturally in the SAME language and script (e.g., Hindi, English, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, etc.). Return the detected 2-letter language code in the "language" field.
+${turnCount >= 3 ? "CRITICAL ACTION DIRECTIVE: You have reached 3-4 questions. You MUST now stop asking questions and set ui_mode to 'action_card' with complete action_card_details." : "Ask exactly ONE simple question with no jargon."}]
 
 User message: ${message || "Namaste"}
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-2.5-flash",
         contents: [
           ...formattedHistory,
           {
@@ -64,9 +90,13 @@ User message: ${message || "Namaste"}
         parsedData = JSON.parse(cleaned);
       }
 
+      if (!parsedData.language) {
+        parsedData.language = detectedLang;
+      }
+
       // Safeguard: If turnCount >= 4 and model didn't set action_card, enforce action card
       if (turnCount >= 4 && parsedData.ui_mode !== "action_card") {
-        const fallback = simulateYojanaDidiResponse(message, 4);
+        const fallback = simulateYojanaDidiResponse(message, 4, parsedData.language || detectedLang);
         parsedData.ui_mode = "action_card";
         parsedData.action_card_details = fallback.action_card_details;
         parsedData.spoken_response = fallback.spoken_response;
@@ -75,7 +105,7 @@ User message: ${message || "Namaste"}
       return NextResponse.json(parsedData);
     } catch (apiError) {
       console.error("[Yojana Didi] Gemini API Error, falling back to simulator:", apiError);
-      const fallbackResponse = simulateYojanaDidiResponse(message, turnCount);
+      const fallbackResponse = simulateYojanaDidiResponse(message, turnCount, detectedLang);
       return NextResponse.json(fallbackResponse);
     }
   } catch (error) {
@@ -84,6 +114,7 @@ User message: ${message || "Namaste"}
       {
         spoken_response: "Maaf kijiye behen, thoda sa network ka chakkar aa gaya hai. Kya aap dobara bol sakti hain?",
         ui_mode: "interview",
+        language: "hi",
         action_card_details: {
           scheme_name: null,
           documents_needed: [],

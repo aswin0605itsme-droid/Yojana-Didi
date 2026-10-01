@@ -36,21 +36,21 @@ export function QuickExitBar({
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-amber-200/80 shadow-xs px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-emerald-200/80 shadow-xs px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
         {/* 1. All-Language Picker Button */}
         <button
           type="button"
           onClick={() => setIsLangModalOpen(true)}
-          className={`flex items-center gap-1.5 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 active:scale-95 transition-all text-xs font-bold text-amber-950 shadow-2xs ${
+          className={`flex items-center gap-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 active:scale-95 transition-all text-xs font-bold text-emerald-950 shadow-2xs ${
             isFrontPage ? "p-2" : "px-3 py-1.5"
           }`}
           title="Change Language"
         >
-          <Globe className="w-4 h-4 text-amber-700" />
+          <Globe className="w-4 h-4 text-emerald-700" />
           {!isFrontPage && (
             <>
               <span>{activeLangConfig.nativeName}</span>
-              <span className="text-[10px] text-stone-400">▼</span>
+              <span className="text-[10px] text-emerald-600">▼</span>
             </>
           )}
         </button>
@@ -62,16 +62,16 @@ export function QuickExitBar({
             onClick={onReadPageOutLoud}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs transition-all active:scale-95 shadow-sm border ${
               isLoadingSpeech
-                ? "bg-amber-100 border-amber-400 text-amber-950 animate-pulse"
+                ? "bg-yellow-100 border-yellow-400 text-yellow-950 animate-pulse"
                 : isReadingPage
-                ? "bg-gradient-to-r from-amber-500 to-orange-500 border-amber-600 text-white animate-pulse ring-2 ring-orange-300"
-                : "bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-amber-300 text-amber-950"
+                ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-yellow-500 border-yellow-300 text-white animate-pulse ring-4 ring-yellow-400/80"
+                : "bg-gradient-to-r from-emerald-50 to-yellow-50 hover:from-emerald-100 hover:to-yellow-100 border-emerald-400 text-emerald-950"
             }`}
             title={activeLangConfig.ui.readPageOutLoud || "Read Page Out Loud"}
           >
             {isLoadingSpeech ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-orange-600" />
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
                 <span>{lang === "ta" ? "குரல் தயாராகிறது..." : "Preparing Speech..."}</span>
               </>
             ) : isReadingPage ? (
@@ -81,7 +81,7 @@ export function QuickExitBar({
               </>
             ) : (
               <>
-                <Volume2 className="w-4 h-4 text-orange-600" />
+                <Volume2 className="w-4 h-4 text-emerald-700" />
                 <span>{activeLangConfig.ui.readPageOutLoud || "🔊 Read Out Loud"}</span>
               </>
             )}
@@ -111,11 +111,11 @@ export function QuickExitBar({
       {/* Language Selection Modal (All 9 Major Languages) */}
       {isLangModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-amber-300 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border-2 border-emerald-400 space-y-4">
+            <div className="flex items-center justify-between border-b border-emerald-200 pb-3">
               <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-amber-600" />
-                <h3 className="text-base font-black text-amber-950">
+                <Globe className="w-5 h-5 text-emerald-700" />
+                <h3 className="text-base font-black text-emerald-950">
                   Select Language / மொழியைத் தேர்வு செய்க
                 </h3>
               </div>
@@ -138,15 +138,15 @@ export function QuickExitBar({
                     onClick={() => handleChooseLang(code)}
                     className={`p-3 rounded-2xl border-2 text-left flex items-center justify-between transition-all active:scale-95 ${
                       isSelected
-                        ? "bg-amber-100 border-amber-500 font-black text-amber-950 shadow-xs"
-                        : "bg-stone-50 border-stone-200 hover:border-amber-300 text-stone-800"
+                        ? "bg-emerald-50 border-emerald-600 font-black text-emerald-950 shadow-xs ring-2 ring-emerald-300"
+                        : "bg-stone-50 border-stone-200 hover:border-emerald-300 text-stone-800"
                     }`}
                   >
                     <div>
                       <div className="text-sm font-bold">{config.nativeName}</div>
                       <div className="text-[10px] text-stone-500">{config.name}</div>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 text-amber-700" />}
+                    {isSelected && <Check className="w-4 h-4 text-emerald-700" />}
                   </button>
                 );
               })}

@@ -270,19 +270,32 @@ export function useVoice({ onSpeechResult, lang = "en-IN" }: UseVoiceOptions = {
         const utterance = new SpeechSynthesisUtterance(cleanText);
         activeUtteranceRef.current = utterance;
 
-        const chosenLang = targetLang || lang || "en-IN";
+        const chosenLang = targetLang || lang || "ta-IN";
         const langPrefix = chosenLang.split("-")[0].toLowerCase();
         const availableVoices =
           voicesRef.current.length > 0 ? voicesRef.current : synthRef.current.getVoices();
 
-        let matchedVoice = availableVoices.find((v) =>
-          v.lang.toLowerCase().startsWith(langPrefix)
-        );
+        const langKeywords: Record<string, string[]> = {
+          ta: ["tamil", "ta-in", "ta_in", "ta"],
+          hi: ["hindi", "hi-in", "hi_in", "hi"],
+          te: ["telugu", "te-in", "te_in", "te"],
+          kn: ["kannada", "kn-in", "kn_in", "kn"],
+          ml: ["malayalam", "ml-in", "ml_in", "ml"],
+          bn: ["bengali", "bangla", "bn-in", "bn"],
+          mr: ["marathi", "mr-in", "mr"],
+          gu: ["gujarati", "gu-in", "gu"],
+          en: ["en-in", "india", "en-us", "en-gb"]
+        };
 
-        if (!matchedVoice && langPrefix === "ta") {
-          matchedVoice = availableVoices.find(
-            (v) => v.name.toLowerCase().includes("tamil") || v.lang.toLowerCase().includes("ta")
-          );
+        const targetKeywords = langKeywords[langPrefix] || [langPrefix];
+        let matchedVoice = availableVoices.find((v) => {
+          const vLang = v.lang.toLowerCase();
+          const vName = v.name.toLowerCase();
+          return targetKeywords.some((kw) => vLang.includes(kw) || vName.includes(kw));
+        });
+
+        if (!matchedVoice) {
+          matchedVoice = availableVoices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
         }
 
         if (!matchedVoice) {
@@ -297,7 +310,7 @@ export function useVoice({ onSpeechResult, lang = "en-IN" }: UseVoiceOptions = {
 
         if (matchedVoice) {
           utterance.voice = matchedVoice;
-          utterance.lang = matchedVoice.lang || "en-IN";
+          utterance.lang = matchedVoice.lang || "ta-IN";
         }
 
         utterance.pitch = 1.05;
@@ -337,8 +350,11 @@ export function useVoice({ onSpeechResult, lang = "en-IN" }: UseVoiceOptions = {
       const cleanText = text.replace(/[*#_`]/g, "").trim();
       if (!cleanText) return;
 
+      const effectiveLang = (targetLang || lang || "ta").split("-")[0].toLowerCase();
+      const cacheKey = `${effectiveLang}:${cleanText}`;
+
       // 1. Check in-memory cache for instant 0ms playback
-      const cached = audioCacheRef.current.get(cleanText);
+      const cached = audioCacheRef.current.get(cacheKey);
       if (cached) {
         playAudioHardware(cached, onEnd);
         return;
@@ -355,14 +371,14 @@ export function useVoice({ onSpeechResult, lang = "en-IN" }: UseVoiceOptions = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: cleanText,
-            lang: targetLang?.startsWith("ta") ? "ta" : "en"
+            lang: effectiveLang
           })
         });
 
         if (res.ok) {
           const data = await res.json();
           if (data.audioUrl) {
-            audioCacheRef.current.set(cleanText, data.audioUrl);
+            audioCacheRef.current.set(cacheKey, data.audioUrl);
             await playAudioHardware(data.audioUrl, onEnd);
             return;
           }
@@ -373,9 +389,9 @@ export function useVoice({ onSpeechResult, lang = "en-IN" }: UseVoiceOptions = {
 
       // 3. Fallback to Web Speech API
       setIsLoadingSpeech(false);
-      speakWithWebSpeech(cleanText, onEnd, targetLang);
+      speakWithWebSpeech(cleanText, onEnd, targetLang || effectiveLang);
     },
-    [unlockAudioContext, stopSpeaking, playAudioHardware, speakWithWebSpeech]
+    [unlockAudioContext, stopSpeaking, playAudioHardware, speakWithWebSpeech, lang]
   );
 
   // Dedicated "Read Page Out Loud"

@@ -250,21 +250,21 @@ export function OmnipotentAIView({
   return (
     <div className="flex-1 flex flex-col justify-between max-w-xl w-full mx-auto px-2 sm:px-4 py-2 animate-in fade-in duration-500">
       {/* MAIN OMNIPOTENT AI CARD */}
-      <div className="w-full bg-amber-50/60 sm:bg-white border-2 border-amber-300 sm:border-amber-400 rounded-3xl p-4 sm:p-5 shadow-lg space-y-3.5">
-        {/* CARD HEADER: Orange icon + Title + Subtitle + Description */}
+      <div className="w-full bg-emerald-50/40 sm:bg-white border-2 border-emerald-400 rounded-3xl p-4 sm:p-5 shadow-lg space-y-3.5">
+        {/* CARD HEADER: Emerald icon + Title + Subtitle + Description */}
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-orange-600 flex items-center justify-center text-white shadow-md shrink-0">
-            <Sparkles className="w-6 h-6 animate-pulse" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-yellow-500 flex items-center justify-center text-white shadow-md shrink-0">
+            <Sparkles className="w-6 h-6 animate-pulse text-yellow-200" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-black text-amber-950 leading-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-emerald-950 leading-tight">
               {lang === "ta"
                 ? "வாணி ஜெமினி உதவியாளர்"
                 : lang === "hi"
                 ? "वाणी जेमिनी सहायक"
                 : "VANI Gemini Assistant"}
             </h2>
-            <div className="text-sm font-black text-amber-900 mt-0.5">
+            <div className="text-sm font-black text-emerald-800 mt-0.5">
               (Omnipresent AI)
             </div>
             <p className="text-xs font-semibold text-stone-600 mt-1 leading-snug">
@@ -299,9 +299,9 @@ export function OmnipotentAIView({
           <button
             type="button"
             onClick={() => handleQuery("ரயில் புக்கிங் மற்றும் ரயில்வே ஸ்டேஷன்")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-sky-50 hover:bg-sky-100 border border-sky-300 text-sky-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Train className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+            <Train className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
             <span>
               {lang === "ta"
                 ? "ரயில் புக்கிங் & ஸ்டேஷன்"
@@ -315,9 +315,9 @@ export function OmnipotentAIView({
           <button
             type="button"
             onClick={() => handleQuery("அரசு பேருந்து நிலையம் மற்றும் பேருந்து நேரம்")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Bus className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <Bus className="w-3.5 h-3.5 text-teal-700 shrink-0" />
             <span>
               {lang === "ta"
                 ? "பேருந்து நிலையம் & நேரம்"
@@ -331,9 +331,9 @@ export function OmnipotentAIView({
           <button
             type="button"
             onClick={() => handleQuery("அருகிலுள்ள அரசு வங்கி எங்கே?")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-white hover:bg-amber-100/60 border border-amber-400 text-amber-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-yellow-50 hover:bg-yellow-100 border border-yellow-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <MapPin className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+            <MapPin className="w-3.5 h-3.5 text-yellow-700 shrink-0" />
             <span>
               {lang === "ta"
                 ? "அருகிலுள்ள அரசு வங்கி"
@@ -347,9 +347,9 @@ export function OmnipotentAIView({
           <button
             type="button"
             onClick={() => handleQuery("அதிகாரப்பூர்வ அரசு இணையதள முகவரி")}
-            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-white hover:bg-amber-100/60 border border-amber-400 text-amber-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-full text-[11px] font-black bg-white hover:bg-emerald-50 border border-emerald-400 text-emerald-950 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Globe className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <Globe className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
             <span>
               {lang === "ta"
                 ? "அதிகாரப்பூர்வ தளம்"
@@ -362,16 +362,16 @@ export function OmnipotentAIView({
 
         {/* INTERACTIVE RESPONSE BUBBLE & RICH MULTI-INTENT CARDS */}
         {aiResponse && (
-          <div className="w-full bg-white border border-amber-200 rounded-2xl p-4 shadow-sm space-y-3 animate-in fade-in zoom-in-98">
+          <div className="w-full bg-white border border-emerald-200 rounded-2xl p-4 shadow-sm space-y-3 animate-in fade-in zoom-in-98">
             {/* Spoken Text Bubble */}
             <div className="flex items-start justify-between gap-3">
-              <p className="text-sm sm:text-base font-bold text-amber-950 leading-relaxed flex-1">
+              <p className="text-sm sm:text-base font-bold text-emerald-950 leading-relaxed flex-1">
                 &ldquo;{aiResponse.spokenText}&rdquo;
               </p>
               <button
                 type="button"
                 onClick={() => onSpeakText(aiResponse.spokenText)}
-                className="p-2 rounded-full hover:bg-amber-100 text-orange-600 shrink-0 transition-all active:scale-90 cursor-pointer"
+                className="p-2 rounded-full hover:bg-emerald-50 text-emerald-700 shrink-0 transition-all active:scale-90 cursor-pointer"
                 title="Hear again / மீண்டும் கேள்"
               >
                 <Volume2 className="w-5 h-5" />
@@ -503,11 +503,11 @@ export function OmnipotentAIView({
 
             {/* D. OFFICIAL GOVERNMENT WEBSITE PORTAL CARD */}
             {aiResponse.websiteUrl && aiResponse.type !== "hospital" && aiResponse.type !== "train" && aiResponse.type !== "bus" && (
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-yellow-50 border border-emerald-400 flex items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <Globe className="w-5 h-5 text-amber-700 shrink-0" />
+                  <Globe className="w-5 h-5 text-emerald-700 shrink-0" />
                   <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-950">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-950">
                       Official Government Portal
                     </div>
                     <div className="text-xs font-semibold text-stone-600 truncate max-w-[200px] sm:max-w-xs">
@@ -519,7 +519,7 @@ export function OmnipotentAIView({
                   href={aiResponse.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-95 transition-all shrink-0 flex items-center gap-1.5"
                 >
                   <span>{lang === "ta" ? "நேரடியாக செல்லவும்" : "Open Portal"}</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -529,15 +529,15 @@ export function OmnipotentAIView({
 
             {/* E. REQUIRED DOCUMENTS CHECKLIST */}
             {aiResponse.documents && (
-              <div className="space-y-1.5 pt-2 border-t border-amber-100">
-                <div className="text-xs font-black text-amber-900 uppercase tracking-wider">
+              <div className="space-y-1.5 pt-2 border-t border-emerald-100">
+                <div className="text-xs font-black text-emerald-900 uppercase tracking-wider">
                   {lang === "ta" ? "ஆவணங்களின் பட்டியல்:" : "List of Documents:"}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {aiResponse.documents.map((doc, idx) => (
                     <div
                       key={idx}
-                      className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs font-bold text-stone-800 flex items-center gap-2"
+                      className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-300 text-xs font-bold text-emerald-950 flex items-center gap-2"
                     >
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>{doc}</span>
@@ -549,16 +549,16 @@ export function OmnipotentAIView({
 
             {/* F. SCHEME DETAILS & STEPS */}
             {aiResponse.isSchemeDetail && aiResponse.schemeDetails && (
-              <div className="space-y-2 pt-2 border-t border-amber-100">
-                <div className="text-xs font-black text-amber-900">
+              <div className="space-y-2 pt-2 border-t border-emerald-100">
+                <div className="text-xs font-black text-emerald-900">
                   {aiResponse.schemeDetails.name} — {aiResponse.schemeDetails.tagline}
                 </div>
                 {aiResponse.schemeDetails.steps.map((st, i) => (
                   <div
                     key={i}
-                    className="p-2 rounded-lg bg-stone-50 border border-stone-200 text-xs text-stone-800"
+                    className="p-2 rounded-lg bg-emerald-50/50 border border-emerald-200 text-xs text-emerald-950"
                   >
-                    <span className="font-black text-amber-800">{i + 1}. {st.title}: </span>
+                    <span className="font-black text-emerald-800">{i + 1}. {st.title}: </span>
                     {st.detail}
                   </div>
                 ))}
@@ -568,7 +568,7 @@ export function OmnipotentAIView({
             {/* G. LIVE GOOGLE MAPS EMBED FOR ANY LOCATION QUERY */}
             {aiResponse.mapQuery && (
               <div className="space-y-2 pt-1">
-                <div className="w-full h-44 rounded-xl overflow-hidden border border-orange-300 shadow-inner bg-stone-100">
+                <div className="w-full h-44 rounded-xl overflow-hidden border border-emerald-400 shadow-inner bg-emerald-50/20">
                   <iframe
                     title="Live Location Map"
                     width="100%"
@@ -586,7 +586,7 @@ export function OmnipotentAIView({
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-98 transition-all"
+                  className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-yellow-600 hover:opacity-95 text-white font-bold text-xs shadow-xs active:scale-98 transition-all"
                 >
                   <Navigation className="w-3.5 h-3.5" />
                   <span>
@@ -602,7 +602,7 @@ export function OmnipotentAIView({
 
         {/* BOTTOM INPUT BAR: MIC & OUTLINED TEXT BOX */}
         <div className="pt-2 flex items-center gap-2.5">
-          {/* Rounded Orange Mic Button */}
+          {/* Rounded Emerald & Gold Mic Button */}
           {onStartListening && (
             <button
               type="button"
@@ -610,14 +610,14 @@ export function OmnipotentAIView({
               className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-95 shadow-md shrink-0 cursor-pointer ${
                 isListening
                   ? "bg-rose-600 text-white animate-pulse ring-4 ring-rose-300"
-                  : "bg-gradient-to-tr from-amber-500 via-orange-500 to-orange-600 text-white hover:opacity-95"
+                  : "bg-gradient-to-tr from-emerald-600 via-teal-600 to-yellow-500 text-white hover:opacity-95 border-2 border-yellow-300"
               }`}
               title={isListening ? "Listening..." : "Tap to Speak"}
             >
               {isListening ? (
                 <MicOff className="w-6 h-6 animate-bounce" />
               ) : (
-                <Mic className="w-6 h-6" />
+                <Mic className="w-6 h-6 text-white" />
               )}
             </button>
           )}
@@ -635,18 +635,18 @@ export function OmnipotentAIView({
                   ? "योजना, अस्पताल, ट्रेन, बस समय या सवाल पूछें..."
                   : "Ask schemes, hospital, train, bus timings, doubts..."
               }
-              className="w-full py-3 sm:py-3.5 pl-4 sm:pl-5 pr-12 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 bg-white border-2 border-amber-300 focus:border-amber-500 rounded-full focus:outline-hidden font-medium shadow-2xs"
+              className="w-full py-3 sm:py-3.5 pl-4 sm:pl-5 pr-12 text-xs sm:text-sm text-emerald-950 placeholder:text-stone-400 bg-white border-2 border-emerald-400 focus:border-emerald-600 focus:ring-2 focus:ring-yellow-400 rounded-full focus:outline-hidden font-medium shadow-2xs"
             />
             <button
               type="submit"
               disabled={!inputText.trim() || isProcessing}
-              className="absolute right-1.5 p-2 rounded-full bg-gradient-to-tr from-amber-200 to-orange-200 hover:from-amber-300 hover:to-orange-300 text-amber-900 disabled:opacity-30 transition-all cursor-pointer"
+              className="absolute right-1.5 p-2 rounded-full bg-gradient-to-tr from-emerald-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 text-white disabled:opacity-30 transition-all cursor-pointer shadow-xs"
               aria-label="Send"
             >
               {isProcessing ? (
-                <Loader2 className="w-4 h-4 animate-spin text-amber-950" />
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
               ) : (
-                <Send className="w-4 h-4 text-amber-950" />
+                <Send className="w-4 h-4 text-white" />
               )}
             </button>
           </form>
@@ -654,7 +654,7 @@ export function OmnipotentAIView({
 
         {/* Live Speech Feedback Bar */}
         {isListening && interimText && (
-          <div className="text-xs font-bold text-orange-950 bg-orange-100 border border-orange-300 rounded-xl px-3 py-1.5 text-center animate-in fade-in">
+          <div className="text-xs font-bold text-emerald-950 bg-yellow-100 border border-yellow-400 rounded-xl px-3 py-1.5 text-center animate-in fade-in">
             &ldquo;{interimText}&rdquo;
           </div>
         )}

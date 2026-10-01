@@ -19,9 +19,9 @@ export function FrontAvatar({
 }: FrontAvatarProps) {
   // Dimension scale based on size prop
   const sizeClasses = {
-    md: "w-24 h-24 sm:w-28 sm:h-28",
-    lg: "w-32 h-32 sm:w-36 sm:h-36",
-    xl: "w-44 h-44 sm:w-48 sm:h-48"
+    md: "w-20 h-20 sm:w-24 sm:h-24",
+    lg: "w-28 h-28 sm:w-32 sm:h-32",
+    xl: "w-40 h-40 sm:w-44 sm:h-44"
   }[size];
 
   // Head tilt for listening or thinking
@@ -45,8 +45,8 @@ export function FrontAvatar({
       {/* Listening Soundwaves Rings */}
       {state === "listening" && (
         <div className="absolute -inset-4 rounded-full pointer-events-none flex items-center justify-center">
-          <div className="w-44 h-44 rounded-full border-2 border-orange-400/40 animate-ping [animation-duration:2.5s]" />
-          <div className="w-52 h-52 rounded-full border border-amber-400/30 animate-pulse [animation-duration:1.8s]" />
+          <div className="w-44 h-44 rounded-full border-2 border-emerald-400/50 animate-ping [animation-duration:2.5s]" />
+          <div className="w-52 h-52 rounded-full border border-yellow-400/40 animate-pulse [animation-duration:1.8s]" />
         </div>
       )}
 
@@ -61,9 +61,10 @@ export function FrontAvatar({
             <stop offset="100%" stopColor="#F59E0B" />
           </linearGradient>
 
+          {/* Emerald Green Kurti / Saree Gradient */}
           <linearGradient id="sareeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#DC2626" />
-            <stop offset="100%" stopColor="#991B1B" />
+            <stop offset="0%" stopColor="#059669" />
+            <stop offset="100%" stopColor="#047857" />
           </linearGradient>
 
           <linearGradient id="hairGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -74,12 +75,12 @@ export function FrontAvatar({
 
         {/* --- BODY & CLOTHES (Gentle Breathing Animation) --- */}
         <g className="animate-breathe origin-bottom">
-          {/* Shoulders & Kurti / Saree */}
+          {/* Shoulders & Kurti / Saree in Emerald Green */}
           <path
             d="M 40,165 Q 100,145 160,165 L 175,200 L 25,200 Z"
             fill="url(#sareeGrad)"
           />
-          {/* Gold Pallu / Border Accent */}
+          {/* Golden Yellow Pallu / Border Accent */}
           <path
             d="M 55,160 Q 95,178 145,160 L 152,176 Q 95,196 48,176 Z"
             fill="#FBBF24"
@@ -229,11 +230,11 @@ export function FrontAvatar({
           {/* Thinking State: 3 Bobbing Dots above head */}
           {state === "thinking" && (
             <g className="animate-in fade-in zoom-in-75">
-              <rect x="75" y="24" width="50" height="24" rx="12" fill="#FFFFFF" stroke="#F59E0B" strokeWidth="2" />
-              <circle cx="88" cy="36" r="3" fill="#D97706" className="animate-bounce [animation-delay:0ms]" />
-              <circle cx="100" cy="36" r="3" fill="#D97706" className="animate-bounce [animation-delay:180ms]" />
-              <circle cx="112" cy="36" r="3" fill="#D97706" className="animate-bounce [animation-delay:360ms]" />
-              <polygon points="100,48 95,55 105,48" fill="#FFFFFF" stroke="#F59E0B" strokeWidth="1" />
+              <rect x="75" y="24" width="50" height="24" rx="12" fill="#FFFFFF" stroke="#059669" strokeWidth="2" />
+              <circle cx="88" cy="36" r="3" fill="#F59E0B" className="animate-bounce [animation-delay:0ms]" />
+              <circle cx="100" cy="36" r="3" fill="#059669" className="animate-bounce [animation-delay:180ms]" />
+              <circle cx="112" cy="36" r="3" fill="#F59E0B" className="animate-bounce [animation-delay:360ms]" />
+              <polygon points="100,48 95,55 105,48" fill="#FFFFFF" stroke="#059669" strokeWidth="1" />
             </g>
           )}
         </g>
@@ -246,8 +247,8 @@ export function FrontAvatar({
               d="M 155,160 Q 170,135 178,110 L 190,118 Q 175,145 162,170 Z"
               fill="url(#skinGrad)"
             />
-            {/* Bangles */}
-            <path d="M 172,118 L 186,126" stroke="#DC2626" strokeWidth="3" />
+            {/* Emerald & Gold Bangles */}
+            <path d="M 172,118 L 186,126" stroke="#059669" strokeWidth="3" />
             <path d="M 175,115 L 189,123" stroke="#FBBF24" strokeWidth="2.5" />
             {/* Hand & Palm */}
             <ellipse cx="186" cy="100" rx="9" ry="12" fill="url(#skinGrad)" transform="rotate(-15 186 100)" />

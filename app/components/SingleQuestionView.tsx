@@ -128,8 +128,8 @@ export function SingleQuestionView({
   return (
     <div className="flex-1 flex flex-col items-center justify-between max-w-xl w-full mx-auto px-4 py-3 text-center space-y-4 animate-in fade-in duration-300">
       {/* Step Tracker (1 of 3 Personalized Questions) */}
-      <div className="w-full flex items-center justify-between text-xs font-black text-amber-950 px-1">
-        <span className="bg-amber-100 px-3.5 py-1 rounded-full border border-amber-300 shadow-2xs">
+      <div className="w-full flex items-center justify-between text-xs font-black text-emerald-950 px-1">
+        <span className="bg-emerald-100 px-3.5 py-1 rounded-full border border-emerald-300 shadow-2xs">
           {lang === "ta"
             ? `கேள்வி ${questionIndex + 1} / ${totalQuestions}`
             : lang === "hi"
@@ -138,9 +138,9 @@ export function SingleQuestionView({
         </span>
         <button
           onClick={onRepeatQuestion}
-          className="flex items-center gap-1.5 text-amber-900 bg-white border border-amber-300 px-3 py-1 rounded-full text-xs font-bold hover:bg-amber-50 active:scale-95 shadow-2xs transition-all"
+          className="flex items-center gap-1.5 text-emerald-900 bg-white border border-emerald-300 px-3 py-1 rounded-full text-xs font-bold hover:bg-emerald-50 active:scale-95 shadow-2xs transition-all cursor-pointer"
         >
-          <Volume2 className="w-4 h-4 text-orange-600" />
+          <Volume2 className="w-4 h-4 text-emerald-700" />
           <span>
             {lang === "ta"
               ? "🔊 மீண்டும் கேள்"
@@ -155,30 +155,30 @@ export function SingleQuestionView({
       <div
         className={`w-full rounded-3xl p-5 border-3 transition-all duration-300 shadow-md ${
           isTitleHighlighted
-            ? "bg-amber-100 border-orange-500 ring-4 ring-orange-400 scale-[1.02] shadow-xl"
-            : "bg-white border-amber-300"
+            ? "bg-yellow-100 border-emerald-600 ring-4 ring-yellow-400 scale-[1.02] shadow-xl"
+            : "bg-white border-2 border-emerald-500"
         }`}
       >
-        <p className="text-xl sm:text-2xl font-black text-amber-950 leading-tight">
+        <p className="text-xl sm:text-2xl font-black text-emerald-950 leading-tight">
           &ldquo;{questionSpeech}&rdquo;
         </p>
       </div>
 
       {/* CONFIRMATION STATE: Guide read back answer and shows Big YES / NO buttons */}
       {isConfirmedPending ? (
-        <div className="w-full bg-amber-50 border-3 border-amber-400 rounded-3xl p-5 shadow-lg space-y-4 animate-in zoom-in-95">
+        <div className="w-full bg-emerald-50 border-3 border-emerald-400 rounded-3xl p-5 shadow-lg space-y-4 animate-in zoom-in-95">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">
+            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide">
               {lang === "ta"
                 ? "உங்கள் தேர்வு:"
                 : lang === "hi"
                 ? "आपका चयन:"
                 : "Your Choice:"}
             </span>
-            <p className="text-2xl font-black text-stone-900">
+            <p className="text-2xl font-black text-emerald-950">
               &ldquo;{pendingAnswerText}&rdquo;
             </p>
-            <p className="text-sm font-semibold text-amber-950 pt-1">
+            <p className="text-sm font-semibold text-emerald-900 pt-1">
               {lang === "ta"
                 ? "இது சரியா? ஆம் அல்லது இல்லை என்று தொடவும்."
                 : lang === "hi"
@@ -192,7 +192,7 @@ export function SingleQuestionView({
             {/* Big YES Button */}
             <button
               onClick={() => onConfirmAnswer(true)}
-              className="py-6 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xl shadow-lg flex flex-col items-center justify-center gap-2 transition-all border-3 border-emerald-400"
+              className="py-6 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xl shadow-lg flex flex-col items-center justify-center gap-2 transition-all border-3 border-emerald-400 cursor-pointer"
             >
               <Check className="w-12 h-12 stroke-[3]" />
               <span>
@@ -203,7 +203,7 @@ export function SingleQuestionView({
             {/* Big NO Button */}
             <button
               onClick={() => onConfirmAnswer(false)}
-              className="py-6 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xl shadow-lg flex flex-col items-center justify-center gap-2 transition-all border-3 border-rose-400"
+              className="py-6 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xl shadow-lg flex flex-col items-center justify-center gap-2 transition-all border-3 border-rose-400 cursor-pointer"
             >
               <X className="w-12 h-12 stroke-[3]" />
               <span>
@@ -238,12 +238,12 @@ export function SingleQuestionView({
                 <button
                   key={opt.id}
                   onClick={() => onSelectOptionDirectly(opt.id)}
-                  className={`border-3 rounded-3xl p-4 sm:p-5 shadow-lg flex flex-col items-center justify-center gap-2.5 active:scale-95 transition-all text-center min-h-[135px] group ${
+                  className={`border-3 rounded-3xl p-4 sm:p-5 shadow-lg flex flex-col items-center justify-center gap-2.5 active:scale-95 transition-all text-center min-h-[135px] group cursor-pointer ${
                     isOptionHighlighted
-                      ? "bg-amber-100 border-orange-500 ring-4 ring-orange-400 scale-[1.04] shadow-2xl z-10"
+                      ? "bg-yellow-100 border-emerald-600 ring-4 ring-yellow-400 scale-[1.04] shadow-2xl z-10"
                       : isNoneOption
-                      ? "bg-stone-50 border-stone-300 hover:border-amber-400 col-span-2 sm:col-span-2 py-3.5 min-h-[90px]"
-                      : "bg-white border-amber-300 hover:border-orange-500 hover:bg-amber-50/60"
+                      ? "bg-emerald-50/50 border-emerald-300 hover:border-emerald-500 col-span-2 sm:col-span-2 py-3.5 min-h-[90px]"
+                      : "bg-white border-emerald-400 hover:border-emerald-600 hover:bg-emerald-50/60"
                   }`}
                 >
                   <div className="transform group-hover:scale-110 transition-transform">
@@ -252,8 +252,8 @@ export function SingleQuestionView({
                   <span
                     className={`leading-tight font-black ${
                       isNoneOption
-                        ? "text-xs sm:text-sm text-stone-700"
-                        : "text-sm sm:text-base text-amber-950"
+                        ? "text-xs sm:text-sm text-emerald-800"
+                        : "text-sm sm:text-base text-emerald-950"
                     }`}
                   >
                     {label}
@@ -268,12 +268,12 @@ export function SingleQuestionView({
             <button
               type="button"
               onClick={isListening ? onStopListening : onStartListening}
-              className={`w-full py-4 px-5 rounded-3xl shadow-xl flex items-center justify-center gap-3 transition-all duration-300 active:scale-98 border-3 ${
+              className={`w-full py-4 px-5 rounded-3xl shadow-xl flex items-center justify-center gap-3 transition-all duration-300 active:scale-98 border-3 cursor-pointer ${
                 isListening
                   ? "bg-rose-600 border-white text-white animate-pulse ring-4 ring-rose-300"
                   : highlightedKey === "speak"
-                  ? "bg-amber-100 border-orange-500 ring-4 ring-orange-400 scale-[1.03]"
-                  : "bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 hover:from-amber-600 hover:to-rose-700 border-yellow-200 text-white hover:scale-[1.01]"
+                  ? "bg-yellow-100 border-emerald-600 ring-4 ring-yellow-400 scale-[1.03]"
+                  : "bg-gradient-to-r from-emerald-600 via-teal-600 to-yellow-500 hover:from-emerald-700 hover:to-yellow-600 border-yellow-300 text-white hover:scale-[1.01]"
               }`}
             >
               <div className="p-2 rounded-2xl bg-white/20 backdrop-blur-xs">
@@ -302,7 +302,7 @@ export function SingleQuestionView({
 
             {/* Interim live speech transcript */}
             {isListening && interimText && (
-              <div className="mt-2 bg-orange-100 border-2 border-orange-400 rounded-2xl px-4 py-2 text-xs sm:text-sm font-bold text-orange-950 animate-in fade-in max-w-md mx-auto shadow-sm">
+              <div className="mt-2 bg-yellow-100 border-2 border-yellow-400 rounded-2xl px-4 py-2 text-xs sm:text-sm font-bold text-emerald-950 animate-in fade-in max-w-md mx-auto shadow-sm">
                 &ldquo;{interimText}&rdquo;
               </div>
             )}

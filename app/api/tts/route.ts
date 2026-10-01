@@ -19,6 +19,18 @@ function pcmToWav(pcmBuffer: Buffer, sampleRate = 24000, numChannels = 1) {
   return Buffer.concat([header, pcmBuffer]);
 }
 
+const LANG_NAMES: Record<string, string> = {
+  ta: "Tamil (தமிழ்)",
+  hi: "Hindi (हिंदी)",
+  te: "Telugu (తెలుగు)",
+  kn: "Kannada (ಕನ್ನಡ)",
+  ml: "Malayalam (മലയാളം)",
+  bn: "Bengali (বাংলা)",
+  mr: "Marathi (मराठी)",
+  gu: "Gujarati (ગુજરાતી)",
+  en: "Indian English"
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { text, lang = "ta" } = await req.json();
@@ -26,51 +38,97 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 
-    const cleanText = text.replace(/[*#_`]/g, "").trim();
-    const isTamil = /[\u0B80-\u0BFF]/.test(cleanText) || lang === "ta";
-    const ttsLang = isTamil ? "ta" : "en";
+    const cleanText = text.replace(/[*#_`]/g, "").replace(/\s+/g, " ").trim();
 
-    // 1. Try ultra-fast Google Cloud/Translate TTS (100ms latency, native Tamil/English speech)
+    // 1. Robust Regional Indian Language Determination
+    let ttsLang = "ta";
+    if (lang === "hi" || /[\u0900-\u097F]/.test(cleanText)) {
+      ttsLang = "hi";
+    } else if (lang === "te" || /[\u0C00-\u0C7F]/.test(cleanText)) {
+      ttsLang = "te";
+    } else if (lang === "kn" || /[\u0C80-\u0CFF]/.test(cleanText)) {
+      ttsLang = "kn";
+    } else if (lang === "ml" || /[\u0D00-\u0D7F]/.test(cleanText)) {
+      ttsLang = "ml";
+    } else if (lang === "bn" || /[\u0980-\u09FF]/.test(cleanText)) {
+      ttsLang = "bn";
+    } else if (lang === "mr") {
+      ttsLang = "mr";
+    } else if (lang === "gu" || /[\u0A80-\u0AFF]/.test(cleanText)) {
+      ttsLang = "gu";
+    } else if (lang === "en") {
+      ttsLang = "en";
+    } else if (lang === "ta" || /[\u0B80-\u0BFF]/.test(cleanText)) {
+      ttsLang = "ta";
+    }
+
+    // 2. Try High-Quality Native Regional Google TTS (Sub-300ms latency, native regional accents)
     try {
-      const gUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${ttsLang}&client=tw-ob&q=${encodeURIComponent(
-        cleanText.substring(0, 300)
-      )}`;
-      const gRes = await fetch(gUrl, {
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
-        signal: AbortSignal.timeout(3000)
-      });
+      // Split into safe chunks if text is long for "Read Whole Page"
+      const chunks = cleanText.match(/[^.!?।\n]+[.!?।\n]*/g) || [cleanText];
+      const audioBuffers: Buffer[] = [];
 
-      if (gRes.ok) {
-        const mp3Buffer = Buffer.from(await gRes.arrayBuffer());
-        if (mp3Buffer.length > 500) {
-          const audioUrl = `data:audio/mpeg;base64,${mp3Buffer.toString("base64")}`;
-          return NextResponse.json({
-            audioUrl,
-            format: "mp3",
-            source: "google_tts"
-          });
+      for (const chunk of chunks.slice(0, 4)) {
+        const trimmedChunk = chunk.trim();
+        if (!trimmedChunk) continue;
+
+        const gUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${ttsLang}&client=tw-ob&q=${encodeURIComponent(
+          trimmedChunk.substring(0, 180)
+        )}`;
+
+        const gRes = await fetch(gUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+          signal: AbortSignal.timeout(3500)
+        });
+
+        if (gRes.ok) {
+          const buf = Buffer.from(await gRes.arrayBuffer());
+          if (buf.length > 200) {
+            audioBuffers.push(buf);
+          }
         }
+      }
+
+      if (audioBuffers.length > 0) {
+        const fullMp3 = Buffer.concat(audioBuffers);
+        const audioUrl = `data:audio/mpeg;base64,${fullMp3.toString("base64")}`;
+        return NextResponse.json({
+          audioUrl,
+          format: "mp3",
+          source: "google_tts",
+          lang: ttsLang
+        });
       }
     } catch (_) {
       // Fall through to Gemini TTS
     }
 
-    // 2. Call Gemini 2.5 Flash TTS endpoint with user's Gemini API Key
+    // 3. Try Live Gemini 2.5 Flash TTS endpoint with Native Language Instruction
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (apiKey) {
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+        const langName = LANG_NAMES[ttsLang] || "Tamil (தமிழ்)";
+
         const response = await fetch(geminiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(6500),
           body: JSON.stringify({
-            contents: [{ parts: [{ text: cleanText }] }],
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `You are VANI, a helpful older sister. Read this text aloud in natural native ${langName} with warm, clear pronunciation: ${cleanText}`
+                  }
+                ]
+              }
+            ],
             generationConfig: {
               responseModalities: ["AUDIO"],
               speechConfig: {
                 voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: "Kore" }
+                  prebuiltVoiceConfig: { voiceName: "Aoede" }
                 }
               }
             }
@@ -96,7 +154,8 @@ export async function POST(req: NextRequest) {
               audioUrl,
               sampleRate,
               format: "wav",
-              source: "gemini_tts"
+              source: "gemini_tts",
+              lang: ttsLang
             });
           }
         }

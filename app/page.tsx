@@ -165,9 +165,35 @@ export default function Home() {
     } else if (stage === "result") {
       const greet =
         lang === "ta"
-          ? "வாணி ஜெமினி உதவியாளர். இணையதள முகவரி, அருகிலுள்ள இடங்கள், அல்லது ஏதேனும் சந்தேகங்களை கேட்கலாம்."
-          : "VANI Gemini Assistant. Ask for website links, nearby locations, or any doubts.";
-      readSequence([{ key: "omni", text: greet }]);
+          ? "வாணி ஜெமினி உதவியாளர். அரசு திட்டங்கள், மகளிர் கடன் உதவிகள், அதிகாரப்பூர்வ இணையதளம், அரசு மருத்துவமனை 108 அவசர உதவி, ரயில் டிக்கெட் முன்பதிவு மற்றும் பேருந்து நேரங்களை இங்கே அறிந்து கொள்ளலாம்."
+          : lang === "hi"
+          ? "वाणी जेमिनी सहायक। सरकारी योजनाएं, आधिकारिक वेबसाइट, अस्पताल, ट्रेन बुकिंग और बस समय यहाँ जान सकते हैं।"
+          : "VANI Gemini Assistant. Government schemes, official portals, hospital emergency 108, train ticket booking and bus schedules.";
+
+      const items: { key: string; text: string }[] = [{ key: "omni", text: greet }];
+
+      if (selectedScheme) {
+        const sName = (selectedScheme.name as any)?.[lang] || selectedScheme.name?.en || "";
+        const sTag = (selectedScheme.tagline as any)?.[lang] || selectedScheme.tagline?.en || "";
+        if (sName) {
+          items.push({
+            key: "scheme",
+            text: `${lang === "ta" ? "பரிந்துரைக்கப்பட்ட திட்டம்:" : "Recommended Scheme:"} ${sName}. ${sTag}`
+          });
+        }
+      }
+
+      items.push({
+        key: "input",
+        text:
+          lang === "ta"
+            ? "உங்கள் கேள்விகளை கீழே உள்ள மைக்கில் பேசவும் அல்லது கட்டத்தில் தட்டச்சு செய்யவும்."
+            : lang === "hi"
+            ? "अपने सवाल नीचे दिए माइक में बोलें या बॉक्स में लिखें।"
+            : "Speak into the microphone below or type your query in the box."
+      });
+
+      readSequence(items);
     }
   };
 
@@ -423,12 +449,14 @@ export default function Home() {
       <VaniFrontPage
         onLanguageIdentifiedAndQuery={handleFrontPageInteraction}
         onStartConsultation={handleStartConsultation}
+        currentLang={lang}
+        onSelectLang={handleSelectLang}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-orange-50/40 to-amber-100/50 text-stone-900 flex flex-col font-sans selection:bg-amber-200">
+    <div className="min-h-screen bg-gradient-to-b from-emerald-50/50 via-amber-50/30 to-emerald-100/40 text-emerald-950 flex flex-col font-sans selection:bg-yellow-200">
       {/* Top Navigation Bar: shown on questions and result screens */}
       <QuickExitBar
         lang={lang}

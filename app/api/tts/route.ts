@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Prevent Vercel 10s timeout on long TTS generation for regional languages
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 function pcmToWav(pcmBuffer: Buffer, sampleRate = 24000, numChannels = 1) {
   const header = Buffer.alloc(44);
   const dataSize = pcmBuffer.length;

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import schemeData from "@/data/scheme.json";
 
+// Prevent Vercel 10s timeout on regional language classification
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { questionId, userSpeech, lang = "ta" } = await req.json();

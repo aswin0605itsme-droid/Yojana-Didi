@@ -1,68 +1,182 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { Header } from "./components/Header";
+import { DidiAvatar } from "./components/DidiAvatar";
+import { InterviewChat } from "./components/InterviewChat";
+import { ActionCard } from "./components/ActionCard";
+import { useVoice } from "./hooks/useVoice";
+import { ChatMessage, YojanaDidiResponse, ActionCardDetails } from "./types";
+
+const INITIAL_GREETING =
+  "Namaste Behen! Main aapki Yojana Didi hoon. Aapko sarkari sahayata paane mein bilkul pareshan nahi hona padega. Mujhe bas itna bataiye, kya aap apna koi naya kaam shuru karna chahti hain jaise silai ya dairy, ya fir aapko kheti ke kaam mein sahayata chahiye?";
 
 export default function Home() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [turnCount, setTurnCount] = useState<number>(1);
+  const [uiMode, setUiMode] = useState<"interview" | "action_card">("interview");
+  const [actionCardDetails, setActionCardDetails] = useState<ActionCardDetails | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasStarted, setHasStarted] = useState<boolean>(false);
+
+  // Send message handler
+  const handleSendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || isLoading) return;
+
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        text: text.trim(),
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+
+      setMessages((prev) => [...prev, userMsg]);
+      setIsLoading(true);
+
+      const nextTurn = turnCount + 1;
+      setTurnCount(nextTurn);
+
+      try {
+        // Build history for backend
+        const history = messages.map((m) => ({
+          role: m.role,
+          content: m.text
+        }));
+
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: text,
+            history,
+            turnCount: nextTurn
+          })
+        });
+
+        const data: YojanaDidiResponse = await res.json();
+
+        const assistantMsg: ChatMessage = {
+          id: `didi-${Date.now()}`,
+          role: "assistant",
+          text: data.spoken_response,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          actionCard: data.ui_mode === "action_card" ? data.action_card_details : null
+        };
+
+        setMessages((prev) => [...prev, assistantMsg]);
+
+        // If action card is ready
+        if (data.ui_mode === "action_card" && data.action_card_details?.scheme_name) {
+          setUiMode("action_card");
+          setActionCardDetails(data.action_card_details);
+        }
+
+        // Speak Didi's response aloud
+        voice.speak(data.spoken_response);
+      } catch (err) {
+        console.error("Chat error:", err);
+        const errorMsg: ChatMessage = {
+          id: `didi-${Date.now()}`,
+          role: "assistant",
+          text: "Maaf kijiye behen, main theek se sun nahi paayi. Kya aap dobara bol sakti hain?",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [messages, turnCount, isLoading]
+  );
+
+  // Initialize Voice hook with callback
+  const voice = useVoice({
+    onSpeechResult: (transcript) => {
+      if (transcript.trim()) {
+        handleSendMessage(transcript.trim());
+      }
+    }
+  });
+
+  // Mount initial greeting
+  useEffect(() => {
+    if (!hasStarted) {
+      setHasStarted(true);
+      const initialMsg: ChatMessage = {
+        id: "initial-didi-msg",
+        role: "assistant",
+        text: INITIAL_GREETING,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+      setMessages([initialMsg]);
+    }
+  }, [hasStarted]);
+
+  // Reset conversation
+  const handleReset = () => {
+    voice.stopSpeaking();
+    voice.stopListening();
+    setUiMode("interview");
+    setActionCardDetails(null);
+    setTurnCount(1);
+    const initialMsg: ChatMessage = {
+      id: `initial-didi-${Date.now()}`,
+      role: "assistant",
+      text: INITIAL_GREETING,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    };
+    setMessages([initialMsg]);
+    voice.speak(INITIAL_GREETING);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-orange-50/40 to-amber-100/50 text-stone-900 flex flex-col font-sans selection:bg-amber-200">
+      {/* Top Header */}
+      <Header
+        isMuted={voice.isMuted}
+        onToggleMute={voice.toggleMute}
+        onReset={handleReset}
+        turnCount={turnCount}
+      />
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-3 flex flex-col justify-between">
+        {/* Animated Yojana Didi Avatar & Companion status */}
+        <section aria-label="Yojana Didi Companion" className="print:hidden">
+          <DidiAvatar
+            isSpeaking={voice.isSpeaking}
+            isListening={voice.isListening}
+            isLoading={isLoading}
+          />
+        </section>
+
+        {/* Dynamic Display: Interview Mode OR Action Card Mode */}
+        {uiMode === "action_card" && actionCardDetails ? (
+          <ActionCard
+            details={actionCardDetails}
+            onSpeak={(text) => voice.speak(text)}
+            onReset={handleReset}
+          />
+        ) : (
+          <InterviewChat
+            messages={messages}
+            turnCount={turnCount}
+            isLoading={isLoading}
+            isListening={voice.isListening}
+            interimText={voice.interimText}
+            onSendMessage={handleSendMessage}
+            onStartListening={voice.startListening}
+            onStopListening={voice.stopListening}
+            onSpeakText={(text) => voice.speak(text)}
+          />
+        )}
+
+        {/* Footer info note */}
+        <footer className="text-center py-2 text-[11px] text-amber-900/60 print:hidden">
+          Yojana Didi • AI Assistant for Rural Women • Built with Google Gemini
+        </footer>
       </main>
     </div>
   );
